@@ -20,23 +20,18 @@ pub(crate) async fn list_blocks(
         .await?;
 
     let continuation_token = response.next_continuation_token().map(ToOwned::to_owned);
-    let folder_names = match response
-        .common_prefixes() {
-            None => vec![],
-            Some(common_prefixes) => {
-                common_prefixes
-                    .into_iter()
-                    .filter_map(|common_prefix| common_prefix.prefix.clone())
-                    .collect()
-            }
-        };
+    let folder_names = match response.common_prefixes() {
+        None => vec![],
+        Some(common_prefixes) => common_prefixes
+            .into_iter()
+            .filter_map(|common_prefix| common_prefix.prefix.clone())
+            .collect(),
+    };
 
-    Ok(
-        crate::types::ListObjectResponse {
-            continuation_token,
-            folder_names,
-        }
-    )
+    Ok(crate::types::ListObjectResponse {
+        continuation_token,
+        folder_names,
+    })
 }
 
 /// By the given block height (`key`) gets the objects:
@@ -59,12 +54,7 @@ pub(crate) async fn get_object(
             .send()
             .await?;
 
-        let body_bytes = response
-            .body
-            .collect()
-            .await
-            .unwrap()
-            .into_bytes();
+        let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
         serde_json::from_slice(body_bytes.as_ref()).unwrap()
     };
@@ -83,12 +73,7 @@ pub(crate) async fn get_object(
             .send()
             .await?;
 
-        let body_bytes = response
-            .body
-            .collect()
-            .await
-            .unwrap()
-            .into_bytes();
+        let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
         shards.push(serde_json::from_slice(body_bytes.as_ref()).unwrap());
     }
