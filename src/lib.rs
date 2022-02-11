@@ -1,23 +1,21 @@
-use tokio::sync::mpsc;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3::{Client, Region};
+use tokio::sync::mpsc;
 
 pub use types::LakeConfig;
 
-pub(crate) mod types;
 mod s3_fetchers;
+pub(crate) mod types;
 
 pub fn streamer(config: LakeConfig) -> mpsc::Receiver<serde_json::Value> {
     let (sender, receiver) = mpsc::channel(16);
-    tokio::spawn(
-        start(
-            sender,
-            config.bucket,
-            config.region,
-            config.start_block_height,
-            config.tracked_shards,
-        )
-    );
+    tokio::spawn(start(
+        sender,
+        config.bucket,
+        config.region,
+        config.start_block_height,
+        config.tracked_shards,
+    ));
     receiver
 }
 
@@ -48,18 +46,18 @@ async fn start(
             &bucket,
             start_from_block_height.map(|block_height| block_height.to_string()),
             continuation_token.clone(),
-        ).await {
+        )
+        .await
+        {
             // update the token for the next iter (pagination)
             continuation_token = list_object_response.continuation_token;
 
             // read each of the block separately from S3
             for folder in list_object_response.folder_names {
-                let block_json = s3_fetchers::get_object(
-                    &client,
-                    &bucket,
-                    &folder,
-                    &tracked_shards,
-                ).await.unwrap(); // TODO: handle error avoid unwraps
+                let block_json =
+                    s3_fetchers::get_object(&client, &bucket, &folder, &tracked_shards)
+                        .await
+                        .unwrap(); // TODO: handle error avoid unwraps
                 file_sink.send(block_json).await.unwrap(); // TODO: handle error avoid unwraps
             }
         }
