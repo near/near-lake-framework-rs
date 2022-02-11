@@ -2,12 +2,13 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3::{Client, Region};
 use tokio::sync::mpsc;
 
+pub use near_indexer_primitives;
 pub use types::LakeConfig;
 
 mod s3_fetchers;
 pub(crate) mod types;
 
-pub fn streamer(config: LakeConfig) -> mpsc::Receiver<serde_json::Value> {
+pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::StreamerMessage> {
     let (sender, receiver) = mpsc::channel(16);
     tokio::spawn(start(
         sender,
@@ -21,7 +22,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<serde_json::Value> {
 
 ///
 async fn start(
-    file_sink: mpsc::Sender<serde_json::Value>,
+    file_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     bucket: String,
     region: String,
     start_from_block_height: Option<u64>,
@@ -54,11 +55,13 @@ async fn start(
 
             // read each of the block separately from S3
             for folder in list_object_response.folder_names {
-                let block_json =
+                let streamer_message_json =
                     s3_fetchers::get_object(&client, &bucket, &folder, &tracked_shards)
                         .await
                         .unwrap(); // TODO: handle error avoid unwraps
-                file_sink.send(block_json).await.unwrap(); // TODO: handle error avoid unwraps
+                let streamer_message: near_indexer_primitives::StreamerMessage =
+                    serde_json::from_value(streamer_message_json).unwrap(); // TODO: handle error avoid unwraps
+                file_sink.send(streamer_message).await.unwrap(); // TODO: handle error avoid unwraps
             }
         }
     }
