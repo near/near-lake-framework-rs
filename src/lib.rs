@@ -5,6 +5,8 @@ use tokio::sync::mpsc;
 pub use near_indexer_primitives;
 pub use types::LakeConfig;
 
+const LAKE_FRAMEWORK: &str = "near_lake_framework";
+
 mod s3_fetchers;
 pub(crate) mod types;
 
@@ -14,7 +16,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
         sender,
         config.bucket,
         config.region,
-        config.start_block_height,
+        Some(config.start_block_height),
         config.tracked_shards,
     ));
     receiver
@@ -55,14 +57,36 @@ async fn start(
 
             // read each of the block separately from S3
             for folder in list_object_response.folder_names {
-                let streamer_message_json =
-                    s3_fetchers::get_object(&client, &bucket, &folder, &tracked_shards)
-                        .await
-                        .unwrap(); // TODO: handle error avoid unwraps
-                let streamer_message: near_indexer_primitives::StreamerMessage =
-                    serde_json::from_value(streamer_message_json).unwrap(); // TODO: handle error avoid unwraps
-                file_sink.send(streamer_message).await.unwrap(); // TODO: handle error avoid unwraps
+                if let Ok(streamer_message_json) =
+                    s3_fetchers::get_object(&client, &bucket, &folder, &tracked_shards).await
+                {
+                    if let Ok(streamer_message) = serde_json::from_value::<
+                        near_indexer_primitives::StreamerMessage,
+                    >(streamer_message_json)
+                    {
+                        file_sink.send(streamer_message).await.unwrap();
+                    } else {
+                        tracing::error!(
+                            target: LAKE_FRAMEWORK,
+                            "Failed to convert JSON to `StreamerMessage` struct for block #{}",
+                            &folder
+                        );
+                    }
+                } else {
+                    tracing::error!(
+                        target: LAKE_FRAMEWORK,
+                        "Failed to get objects for key {} from bucket {}",
+                        &folder,
+                        &bucket
+                    );
+                }
             }
+        } else {
+            tracing::error!(
+                target: LAKE_FRAMEWORK,
+                "Failed to list objects from bucket {}. Retrying...",
+                &bucket
+            );
         }
     }
 }
