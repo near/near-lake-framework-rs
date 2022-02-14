@@ -37,14 +37,18 @@ pub(crate) async fn fetch_streamer_message(
     s3_bucket_name: &str,
     block_height_prefix: &str,
 ) -> anyhow::Result<near_indexer_primitives::StreamerMessage> {
-    let mut main_json = serde_json::json!({});
     let block_json: serde_json::Value = {
-        let response = s3_client
-            .get_object()
-            .bucket(s3_bucket_name)
-            .key(format!("{}block.json", block_height_prefix))
-            .send()
-            .await?;
+        let response = loop {
+            if let Ok(response) = s3_client
+                .get_object()
+                .bucket(s3_bucket_name)
+                .key(format!("{}block.json", block_height_prefix))
+                .send()
+                .await
+            {
+                break response;
+            }
+        };
 
         let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
@@ -53,7 +57,9 @@ pub(crate) async fn fetch_streamer_message(
 
     let shards_num: u64 = block_json["header"]["chunks_included"].as_u64().unwrap();
 
-    main_json["block"] = block_json;
+    let mut main_json = serde_json::json!({
+        "block": block_json,
+    });
 
     let mut shards: Vec<serde_json::Value> = vec![];
 
