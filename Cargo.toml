@@ -6,6 +6,7 @@ edition = "2021"
 rust-version = "1.58.1"
 
 [dependencies]
+anyhow = "1.0.51"
 aws-config = "0.6.0"
 aws-endpoint = "0.6.0"
 aws-sdk-s3 = "0.6.0"
