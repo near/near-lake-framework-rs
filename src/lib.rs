@@ -1,14 +1,17 @@
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3::{Client, Region};
+
+use futures::stream::StreamExt;
 use tokio::sync::mpsc;
 
 pub use near_indexer_primitives;
-pub use types::LakeConfig;
 
-const LAKE_FRAMEWORK: &str = "near_lake_framework";
+pub use types::LakeConfig;
 
 mod s3_fetchers;
 pub(crate) mod types;
+
+const LAKE_FRAMEWORK: &str = "near_lake_framework";
 
 pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::StreamerMessage> {
     let (sender, receiver) = mpsc::channel(16);
@@ -16,8 +19,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
         sender,
         config.bucket,
         config.region,
-        Some(config.start_block_height),
-        config.tracked_shards,
+        config.start_block_height,
     ));
     receiver
 }
@@ -27,8 +29,7 @@ async fn start(
     file_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     bucket: String,
     region: String,
-    start_from_block_height: Option<u64>,
-    tracked_shards: Vec<u8>,
+    start_from_block_height: u64,
 ) {
     // instantiate AWS S3 Client
     let region_provider = RegionProviderChain::first_try(Some(region).map(Region::new))
@@ -41,13 +42,13 @@ async fn start(
     // on the next call to get the next portion of objects (pagination)
     let mut continuation_token: Option<String> = None;
 
-    // Continuosly get the list of block data from S3 and stream send them to the `file_sink`
+    // Continuously get the list of block data from S3 and send them to the `file_sink`
     loop {
         // TODO: decide what to do if we got an error
         if let Ok(list_object_response) = s3_fetchers::list_blocks(
             &client,
             &bucket,
-            start_from_block_height.map(|block_height| block_height.to_string()),
+            Some(start_from_block_height.to_string()),
             continuation_token.clone(),
         )
         .await
@@ -55,32 +56,15 @@ async fn start(
             // update the token for the next iter (pagination)
             continuation_token = list_object_response.continuation_token;
 
-            // read each of the block separately from S3
-            for folder in list_object_response.folder_names {
-                if let Ok(streamer_message_json) =
-                    s3_fetchers::get_object(&client, &bucket, &folder, &tracked_shards).await
-                {
-                    if let Ok(streamer_message) = serde_json::from_value::<
-                        near_indexer_primitives::StreamerMessage,
-                    >(streamer_message_json)
-                    {
-                        file_sink.send(streamer_message).await.unwrap();
-                    } else {
-                        tracing::error!(
-                            target: LAKE_FRAMEWORK,
-                            "Failed to convert JSON to `StreamerMessage` struct for block #{}",
-                            &folder
-                        );
-                    }
-                } else {
-                    tracing::error!(
-                        target: LAKE_FRAMEWORK,
-                        "Failed to get objects for key {} from bucket {}",
-                        &folder,
-                        &bucket
-                    );
-                }
-            }
+            let mut blocks_futures: futures::stream::FuturesOrdered<_> = list_object_response
+                .folder_names
+                .iter()
+                .map(|folder| {
+                    build_and_send_streamer_message(&file_sink, &client, &bucket, &folder)
+                })
+                .collect();
+
+            while let Some(_response) = blocks_futures.next().await {}
         } else {
             tracing::error!(
                 target: LAKE_FRAMEWORK,
@@ -88,5 +72,23 @@ async fn start(
                 &bucket
             );
         }
+    }
+}
+
+/// Fetches the necessary data to build up the `StreamerMessage`
+/// and send it to the stream (`file_sink`)
+async fn build_and_send_streamer_message(
+    file_sink: &mpsc::Sender<near_indexer_primitives::StreamerMessage>,
+    client: &Client,
+    bucket: &str,
+    folder: &str,
+) {
+    let streamer_message_json = s3_fetchers::get_object(&client, &bucket, &folder)
+        .await
+        .unwrap();
+    if let Ok(streamer_message) =
+        serde_json::from_value::<near_indexer_primitives::StreamerMessage>(streamer_message_json)
+    {
+        file_sink.send(streamer_message).await.unwrap();
     }
 }

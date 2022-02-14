@@ -11,7 +11,7 @@ pub(crate) async fn list_blocks(
 ) -> Result<crate::types::ListObjectResponse, Error> {
     let response = client
         .list_objects_v2()
-        .max_keys(10)
+        .max_keys(1000)
         .delimiter("/".to_string())
         .set_start_after(start_after_block_height)
         .set_continuation_token(continuation_token)
@@ -43,10 +43,9 @@ pub(crate) async fn get_object(
     client: &Client,
     bucket: &str,
     key: &str,
-    tracked_shards: &Vec<u8>,
 ) -> Result<serde_json::Value, Error> {
     let mut main_json = serde_json::json!({});
-    let block_json = {
+    let block_json: serde_json::Value = {
         let response = client
             .get_object()
             .bucket(bucket)
@@ -59,13 +58,13 @@ pub(crate) async fn get_object(
         serde_json::from_slice(body_bytes.as_ref()).unwrap()
     };
 
+    let shards_num: u64 = block_json["header"]["chunks_included"].as_u64().unwrap();
+
     main_json["block"] = block_json;
 
     let mut shards: Vec<serde_json::Value> = vec![];
-    // TODO: undefined bahaviour in case if we track N > 1 shards
-    // but there is only N-1 shards, we need to handle it. Probably,
-    // by checking the `block.chunks` amount
-    for shard_id in tracked_shards {
+
+    for shard_id in 0..shards_num {
         let response = client
             .get_object()
             .bucket(bucket)

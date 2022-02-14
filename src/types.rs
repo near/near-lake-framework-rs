@@ -6,8 +6,6 @@ pub struct LakeConfig {
     pub region: String,
     /// Defines the block height to start indexing from
     pub start_block_height: u64,
-    /// List of shard indexes to track, pass empty Vec if you want to track all shards
-    pub tracked_shards: Vec<u8>,
 }
 
 pub(crate) struct ListObjectResponse {
