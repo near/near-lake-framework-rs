@@ -17,8 +17,8 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
     let (sender, receiver) = mpsc::channel(100);
     tokio::spawn(start(
         sender,
-        config.bucket,
-        config.region,
+        config.s3_bucket_name,
+        config.s3_region_name,
         config.start_block_height,
     ));
     receiver
