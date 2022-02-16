@@ -56,21 +56,15 @@ pub(crate) async fn fetch_streamer_message(
             .unwrap()
     };
 
-    let shards_num: u64 = block_view.header.chunks_included;
-
-    let mut shards: Vec<near_indexer_primitives::IndexerShard> = vec![];
-
-    let mut shards_futures: futures::stream::FuturesOrdered<_> = (0..shards_num)
+    let shards: Vec<near_indexer_primitives::IndexerShard> = (0..block_view.header.chunks_included)
         .collect::<Vec<u64>>()
         .into_iter()
         .map(|shard_id| {
             fetch_shard_or_retry(s3_client, s3_bucket_name, block_height_prefix, shard_id)
         })
-        .collect();
-
-    while let Some(shard) = shards_futures.next().await {
-        shards.push(shard.unwrap());
-    }
+        .collect::<futures::stream::FuturesOrdered<_>>()
+        .collect()
+        .await;
 
     Ok(near_indexer_primitives::StreamerMessage {
         block: block_view,
@@ -83,7 +77,7 @@ async fn fetch_shard_or_retry(
     s3_bucket_name: &str,
     block_height_prefix: &str,
     shard_id: u64,
-) -> anyhow::Result<near_indexer_primitives::IndexerShard> {
+) -> near_indexer_primitives::IndexerShard {
     loop {
         if let Ok(response) = s3_client
             .get_object()
@@ -94,12 +88,10 @@ async fn fetch_shard_or_retry(
         {
             let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
-            break Ok(
-                serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
-                    body_bytes.as_ref(),
-                )
-                .unwrap(),
-            );
+            break serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
+                body_bytes.as_ref(),
+            )
+            .unwrap();
         };
     }
 }
