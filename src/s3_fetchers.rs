@@ -18,11 +18,11 @@ pub(crate) async fn list_blocks(
         .send()
         .await?;
 
-    Ok(match response.common_prefixes() {
+    Ok(match response.common_prefixes {
         None => vec![],
         Some(common_prefixes) => common_prefixes
-            .iter()
-            .filter_map(|common_prefix| common_prefix.prefix.clone())
+            .into_iter()
+            .filter_map(|common_prefix| common_prefix.prefix)
             .collect(),
     })
 }
@@ -30,14 +30,14 @@ pub(crate) async fn list_blocks(
 /// By the given block height (`block_height_prefix`) gets the objects:
 /// - block.json
 /// - shard_N.json
-/// Reads the content of the objects and parses it to JSON.
-/// Returns the result in a single JSON
+/// Reads the content of the objects and parses as a JSON.
+/// Returns the result in `near_indexer_primitives::StreamerMessage`
 pub(crate) async fn fetch_streamer_message(
     s3_client: &Client,
     s3_bucket_name: &str,
     block_height_prefix: &str,
 ) -> anyhow::Result<near_indexer_primitives::StreamerMessage> {
-    let block_json: serde_json::Value = {
+    let block_view = {
         let response = loop {
             if let Ok(response) = s3_client
                 .get_object()
@@ -52,16 +52,13 @@ pub(crate) async fn fetch_streamer_message(
 
         let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
-        serde_json::from_slice(body_bytes.as_ref()).unwrap()
+        serde_json::from_slice::<near_indexer_primitives::views::BlockView>(body_bytes.as_ref())
+            .unwrap()
     };
 
-    let shards_num: u64 = block_json["header"]["chunks_included"].as_u64().unwrap();
+    let shards_num: u64 = block_view.header.chunks_included;
 
-    let mut main_json = serde_json::json!({
-        "block": block_json,
-    });
-
-    let mut shards: Vec<serde_json::Value> = vec![];
+    let mut shards: Vec<near_indexer_primitives::IndexerShard> = vec![];
 
     let mut shards_futures: futures::stream::FuturesOrdered<_> = (0..shards_num)
         .collect::<Vec<u64>>()
@@ -75,9 +72,10 @@ pub(crate) async fn fetch_streamer_message(
         shards.push(shard.unwrap());
     }
 
-    main_json["shards"] = serde_json::Value::Array(shards);
-
-    Ok(serde_json::from_value::<near_indexer_primitives::StreamerMessage>(main_json).unwrap())
+    Ok(near_indexer_primitives::StreamerMessage {
+        block: block_view,
+        shards,
+    })
 }
 
 async fn fetch_shard_or_retry(
@@ -85,7 +83,7 @@ async fn fetch_shard_or_retry(
     s3_bucket_name: &str,
     block_height_prefix: &str,
     shard_id: u64,
-) -> anyhow::Result<serde_json::Value> {
+) -> anyhow::Result<near_indexer_primitives::IndexerShard> {
     loop {
         if let Ok(response) = s3_client
             .get_object()
@@ -96,7 +94,12 @@ async fn fetch_shard_or_retry(
         {
             let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
-            break Ok(serde_json::from_slice(body_bytes.as_ref()).unwrap());
+            break Ok(
+                serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
+                    body_bytes.as_ref(),
+                )
+                .unwrap(),
+            );
         };
     }
 }
