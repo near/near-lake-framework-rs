@@ -20,4 +20,4 @@ tokio-stream = { version = "0.1" }
 tracing = "0.1.13"
 tracing-subscriber = "0.2.4"
 
-near-indexer-primitives = { git = "https://github.com/near/nearcore", rev = "bd8a2de708b0350046eb16ce398a7ec896a94f0c" }
+near-indexer-primitives = { git = "https://github.com/near/nearcore", rev = "ea731e37efd2db44313a2769ad5b0e12ae9c3e34" }
