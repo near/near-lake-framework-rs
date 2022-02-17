@@ -62,12 +62,7 @@ aws_access_key_id=AKIAIOSFODNN7EXAMPLE
 aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 ```
 
-`~/.aws/config`
-```
-[default]
-region=us-west-2
-output=json
-```
+[AWS docs: Configuration and credential file settings](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 
 ### Dependencies
 
@@ -77,7 +72,7 @@ Add the following dependencies to your `Cargo.toml`
 ...
 [dependencies]
 futures = "0.3.5"
-itertools = "0.9.0"
+itertools = "0.10.3"
 tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-thread"] }
 tokio-stream = { version = "0.1" }
 
@@ -91,7 +86,14 @@ Everything should be configured before the start of your indexer application via
 
 Available parameters:
 
-* `bucket: String` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
-* `region: String` - provide the region for AWS S3 bucket
-* `start_block_height: Option<u64>` - optional block height to start stream from, if `None` will start from the earliest available block on AWS S3 bucket (usualy, the genesis block)
-* `tracked_shards: Vec<u8>` - the list of indexes of the shards to track, if empty `Vec` is provided assumes you track all shards
+* `s3_bucket_name: String` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
+* `s3_region_name: String` - provide the region for AWS S3 bucket
+* `start_block_height: u64` - block height to start the stream from
+
+
+## Future plans
+
+We use Milestones with clearly defined acceptance criteria:
+
+* [ ] [MVP](https://github.com/near/near-lake-framework/milestone/1)
+* [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
