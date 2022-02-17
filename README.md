@@ -14,10 +14,9 @@ use near_lake_framework::LakeConfig;
 async fn main() -> Result<(), tokio::io::Error> {
     // create a NEAR Lake Framework config
     let config = LakeConfig {
-        bucket: "near-lake-testnet".to_string(), // AWS S3 bucket name
-        region: "eu-central-1".to_string(), // AWS S3 bucket region
-        start_block_height: Some(82422587), // the latest block height we've got from explorer.near.org for testnet
-        tracked_shards: vec![0, 1, 2, 3], // track all 4 existing shards
+        s3_bucket_name: "near-lake-testnet".to_string(), // AWS S3 bucket name
+        s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
+        start_block_height: 82422587, // the latest block height we've got from explorer.near.org for testnet
     };
 
     // instantiate the NEAR Lake Framework Stream
