@@ -2,8 +2,7 @@ use aws_sdk_s3::Client;
 use futures::stream::StreamExt;
 
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
-/// Returns the continuation token along with the so called list of folder names
-/// that represent a block heights
+/// Returns list of folder names that represent a block heights (e.g. "11111111/")
 pub(crate) async fn list_blocks(
     s3_client: &Client,
     s3_bucket_name: &str,
