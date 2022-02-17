@@ -95,5 +95,5 @@ Available parameters:
 
 We use Milestones with clearly defined acceptance criteria:
 
-* [ ] [MVP](https://github.com/near/near-lake-framework/milestone/1)
+* [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
 * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
