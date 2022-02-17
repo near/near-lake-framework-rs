@@ -29,7 +29,7 @@ async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     s3_bucket_name: String,
     s3_region_name: String,
-    index_from_block_height: u64,
+    index_from_block_height: types::BlockHeight,
 ) {
     // instantiate AWS S3 Client
     let region_provider = RegionProviderChain::first_try(Some(s3_region_name).map(Region::new))
@@ -44,29 +44,24 @@ async fn start(
     loop {
         // TODO: decide what to do if we got an error
         if let Ok(block_heights_prefixes) =
-            s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height)
-                .await
+            s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
             // update start_after key
-            if Some(last_block_height) = block_heights_prefixes.last() {
-                start_from_block_height = last_block_height
-                    .split('/')
-                    .next()
-                    .map(|s| s.parse::<u64>().unwrap() + 1)
-                    .unwrap_or_else(|| start_from_block_height);
+            if let Some(last_block_height) = block_heights_prefixes.last() {
+                start_from_block_height = *last_block_height;
             } else {
-                sleep(0.2s).await;
+                tokio::time::sleep(std::time::Duration::from_millis(2)).await;
                 continue;
             }
 
             let mut streamer_messages_futures: futures::stream::FuturesOrdered<_> =
                 block_heights_prefixes
                     .iter()
-                    .map(|block_height_prefix| {
+                    .map(|block_height| {
                         s3_fetchers::fetch_streamer_message(
                             &s3_client,
                             &s3_bucket_name,
-                            block_height_prefix,
+                            *block_height,
                         )
                     })
                     .collect();

@@ -1,3 +1,5 @@
+pub type BlockHeight = u64;
+
 /// Configuration struct for NEAR Lake Framework
 pub struct LakeConfig {
     /// AWS S3 Bucket name
