@@ -48,7 +48,7 @@ async fn start(
         {
             // update start_after key
             if let Some(last_block_height) = block_heights_prefixes.last() {
-                start_from_block_height = *last_block_height;
+                start_from_block_height = *last_block_height + 1;
             } else {
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 continue;

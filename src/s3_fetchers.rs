@@ -12,7 +12,7 @@ pub(crate) async fn list_blocks(
         .list_objects_v2()
         .max_keys(1000)
         .delimiter("/".to_string())
-        .start_after(start_from_block_height.to_string())
+        .start_after(format!("{:0>12}", start_from_block_height))
         .bucket(s3_bucket_name)
         .send()
         .await?;
@@ -50,7 +50,7 @@ pub(crate) async fn fetch_streamer_message(
             if let Ok(response) = s3_client
                 .get_object()
                 .bucket(s3_bucket_name)
-                .key(format!("{}/block.json", block_height))
+                .key(format!("{:0>12}/block.json", block_height))
                 .send()
                 .await
             {
@@ -89,7 +89,7 @@ async fn fetch_shard_or_retry(
         if let Ok(response) = s3_client
             .get_object()
             .bucket(s3_bucket_name)
-            .key(format!("{}/shard_{}.json", block_height, shard_id))
+            .key(format!("{:0>12}/shard_{}.json", block_height, shard_id))
             .send()
             .await
         {
