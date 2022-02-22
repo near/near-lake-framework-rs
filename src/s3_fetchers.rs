@@ -13,6 +13,7 @@ pub(crate) async fn list_blocks(
         .max_keys(1000)
         .delimiter("/".to_string())
         .start_after(format!("{:0>12}", start_from_block_height))
+        .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
         .bucket(s3_bucket_name)
         .send()
         .await?;
@@ -51,6 +52,7 @@ pub(crate) async fn fetch_streamer_message(
                 .get_object()
                 .bucket(s3_bucket_name)
                 .key(format!("{:0>12}/block.json", block_height))
+                .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
                 .send()
                 .await
             {
@@ -90,6 +92,7 @@ async fn fetch_shard_or_retry(
             .get_object()
             .bucket(s3_bucket_name)
             .key(format!("{:0>12}/shard_{}.json", block_height, shard_id))
+            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
             .send()
             .await
         {
