@@ -39,6 +39,7 @@ async fn start(
     let s3_client = Client::new(&shared_config);
 
     let mut start_from_block_height = index_from_block_height;
+    let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
@@ -67,10 +68,21 @@ async fn start(
                     .collect();
 
             while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-                streamer_message_sink
-                    .send(streamer_message_result.unwrap())
-                    .await
-                    .unwrap();
+                let streamer_message =
+                    streamer_message_result.expect("Failed to unwrap StreamerMessage from Result");
+                // check if we have `last_processed_block_hash` (might be None only on start)
+                if let Some(prev_block_hash) = last_processed_block_hash {
+                    // compare last_processed_block_hash` with `block.header.prev_hash` of the current
+                    // block (ensure we don't miss anything from S3)
+                    // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
+                    if prev_block_hash != streamer_message.block.header.prev_hash {
+                        start_from_block_height = streamer_message.block.header.height - 1;
+                        break;
+                    }
+                }
+                // store current block hash as `last_processed_block_hash` for next iteration
+                last_processed_block_hash = Some(streamer_message.block.header.hash);
+                streamer_message_sink.send(streamer_message).await.unwrap();
             }
         } else {
             tracing::error!(
