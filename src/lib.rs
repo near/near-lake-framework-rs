@@ -47,10 +47,7 @@ async fn start(
         if let Ok(block_heights_prefixes) =
             s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
-            // update start_after key
-            if let Some(last_block_height) = block_heights_prefixes.last() {
-                start_from_block_height = *last_block_height + 1;
-            } else {
+            if block_heights_prefixes.is_empty() {
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 continue;
             }
@@ -76,12 +73,13 @@ async fn start(
                     // block (ensure we don't miss anything from S3)
                     // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
                     if prev_block_hash != streamer_message.block.header.prev_hash {
-                        start_from_block_height = streamer_message.block.header.height - 1;
                         break;
                     }
                 }
                 // store current block hash as `last_processed_block_hash` for next iteration
                 last_processed_block_hash = Some(streamer_message.block.header.hash);
+                // update start_after key
+                start_from_block_height = streamer_message.block.header.height + 1;
                 streamer_message_sink.send(streamer_message).await.unwrap();
             }
         } else {
