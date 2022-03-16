@@ -73,6 +73,11 @@ async fn start(
                     // block (ensure we don't miss anything from S3)
                     // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
                     if prev_block_hash != streamer_message.block.header.prev_hash {
+                        tracing::warn!(
+                            target: LAKE_FRAMEWORK,
+                            "`prev_hash` does not match, refetching the data from S3 in 200ms",
+                        );
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                         break;
                     }
                 }
