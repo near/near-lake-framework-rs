@@ -39,6 +39,7 @@ async fn start(
     let s3_client = Client::new(&shared_config);
 
     let mut start_from_block_height = index_from_block_height;
+    let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
@@ -46,10 +47,7 @@ async fn start(
         if let Ok(block_heights_prefixes) =
             s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
-            // update start_after key
-            if let Some(last_block_height) = block_heights_prefixes.last() {
-                start_from_block_height = *last_block_height + 1;
-            } else {
+            if block_heights_prefixes.is_empty() {
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 continue;
             }
@@ -67,10 +65,27 @@ async fn start(
                     .collect();
 
             while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-                streamer_message_sink
-                    .send(streamer_message_result.unwrap())
-                    .await
-                    .unwrap();
+                let streamer_message =
+                    streamer_message_result.expect("Failed to unwrap StreamerMessage from Result");
+                // check if we have `last_processed_block_hash` (might be None only on start)
+                if let Some(prev_block_hash) = last_processed_block_hash {
+                    // compare last_processed_block_hash` with `block.header.prev_hash` of the current
+                    // block (ensure we don't miss anything from S3)
+                    // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
+                    if prev_block_hash != streamer_message.block.header.prev_hash {
+                        tracing::warn!(
+                            target: LAKE_FRAMEWORK,
+                            "`prev_hash` does not match, refetching the data from S3 in 200ms",
+                        );
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                        break;
+                    }
+                }
+                // store current block hash as `last_processed_block_hash` for next iteration
+                last_processed_block_hash = Some(streamer_message.block.header.hash);
+                // update start_after key
+                start_from_block_height = streamer_message.block.header.height + 1;
+                streamer_message_sink.send(streamer_message).await.unwrap();
             }
         } else {
             tracing::error!(
