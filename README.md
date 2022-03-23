@@ -91,11 +91,11 @@ Available parameters:
 
 ## Cost estimates
 
-**TL;DR** approximately $18.15 per month (for AWS S3 access, payed directly to AWS)
+**TL;DR** approximately $18.15 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
 
 Explanation:
 
-Assuming NEAR Protocol produces accurately 1 block per second (which is relly not, average block production time is 1.3s). Full day consists of 86400 seconds, that's the max number of blocks can be produced.
+Assuming NEAR Protocol produces accurately 1 block per second (which is really not, the average block production time is 1.3s). A full day consists of 86400 seconds, that's the max number of blocks that can be produced.
 
 According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.005 per 1000 requests and `get` is charged for $0.0004 per 1000 requests.
 
@@ -104,7 +104,7 @@ Calculations (assuming we are following the tip of the network all the time):
 ```
 86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.173 * 30 days = $5.19
 ```
-**Note:** 5 requests for each blocks means we have 4 shards (1 file for common block data and 4 separate files for each shard)
+**Note:** 5 requests for each block means we have 4 shards (1 file for common block data and 4 separate files for each shard)
 
 And a number of `list` requests we need to perform for a day:
 
@@ -114,7 +114,7 @@ And a number of `list` requests we need to perform for a day:
 $5.19 + $12.96 = $18.15
 ```
 
-The price depends on the number of shards but the difference wouldn't be drastic
+The price depends on the number of shards
 
 ## Future plans
 
