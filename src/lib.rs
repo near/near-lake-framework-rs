@@ -48,7 +48,7 @@ async fn start(
             s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
             if block_heights_prefixes.is_empty() {
-                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 continue;
             }
 
