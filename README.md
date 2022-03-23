@@ -106,7 +106,7 @@ Calculations (assuming we are following the tip of the network all the time):
 ```
 **Note:** 5 requests for each block means we have 4 shards (1 file for common block data and 4 separate files for each shard)
 
-And a number of `list` requests we need to perform for a day:
+And a number of `list` requests we need to perform for 30 days:
 
 ```
 86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.432 * 30 days = $12.96
