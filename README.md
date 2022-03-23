@@ -89,6 +89,32 @@ Available parameters:
 * `s3_region_name: String` - provide the region for AWS S3 bucket
 * `start_block_height: u64` - block height to start the stream from
 
+## Cost estimates
+
+**TL;DR** approximately $18.15 per month (for AWS S3 access, payed directly to AWS)
+
+Explanation:
+
+Assuming NEAR Protocol produces accurately 1 block per second (which is relly not, average block production time is 1.3s). Full day consists of 86400 seconds, that's the max number of blocks can be produced.
+
+According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.005 per 1000 requests and `get` is charged for $0.0004 per 1000 requests.
+
+Calculations (assuming we are following the tip of the network all the time):
+
+```
+86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.173 * 30 days = $5.19
+```
+**Note:** 5 requests for each blocks means we have 4 shards (1 file for common block data and 4 separate files for each shard)
+
+And a number of `list` requests we need to perform for a day:
+
+```
+86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.432 * 30 days = $12.96
+
+$5.19 + $12.96 = $18.15
+```
+
+The price depends on the number of shards but the difference wouldn't be drastic
 
 ## Future plans
 
