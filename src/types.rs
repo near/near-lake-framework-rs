@@ -2,6 +2,8 @@ pub type BlockHeight = u64;
 
 /// Configuration struct for NEAR Lake Framework
 pub struct LakeConfig {
+	/// AWS S3 Custom Endpoint
+    pub s3_endpoint: Option<String>,
     /// AWS S3 Bucket name
     pub s3_bucket_name: String,
     /// AWS S3 Region name for the provided Bucket

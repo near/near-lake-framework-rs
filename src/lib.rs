@@ -1,7 +1,8 @@
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_s3::{Client, Region};
+use aws_sdk_s3::{Client, Region, Endpoint};
 
 use futures::stream::StreamExt;
+use http::Uri;
 use tokio::sync::mpsc;
 
 pub use near_indexer_primitives;
@@ -17,6 +18,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
     let (sender, receiver) = mpsc::channel(100);
     tokio::spawn(start(
         sender,
+        config.s3_endpoint,
         config.s3_bucket_name,
         config.s3_region_name,
         config.start_block_height,
@@ -27,6 +29,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
 ///
 async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
+    s3_endpoint: Option<String>,
     s3_bucket_name: String,
     s3_region_name: String,
     index_from_block_height: types::BlockHeight,
@@ -36,7 +39,19 @@ async fn start(
         .or_default_provider()
         .or_else(Region::new("eu-central-1"));
     let shared_config = aws_config::from_env().region(region_provider).load().await;
-    let s3_client = Client::new(&shared_config);
+    let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+    // Owerride S3 endpoint in case you want to use custom solution
+    // like Minio or Localstack as a S3 compatible storage
+    if s3_endpoint.is_some() {
+        let endpoint = s3_endpoint.as_ref().unwrap();
+        s3_conf = s3_conf.endpoint_resolver(Endpoint::immutable(endpoint.parse::<Uri>().unwrap()));
+        tracing::info!(
+            target: LAKE_FRAMEWORK,
+            "Custom S3 endpoint used: {}",
+            endpoint
+        );
+    }
+    let s3_client = Client::from_conf(s3_conf.build());
 
     let mut start_from_block_height = index_from_block_height;
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
