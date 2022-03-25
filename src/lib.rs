@@ -43,15 +43,22 @@ async fn start(
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
-        // TODO: decide what to do if we got an error
         if let Ok(block_heights_prefixes) =
             s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
             if block_heights_prefixes.is_empty() {
+                tracing::debug!(
+                    target: LAKE_FRAMEWORK,
+                    "No new blocks on S3, retry in 2s..."
+                );
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 continue;
             }
-
+            tracing::debug!(
+                target: LAKE_FRAMEWORK,
+                "Received {} blocks from S3",
+                block_heights_prefixes.len()
+            );
             let mut streamer_messages_futures: futures::stream::FuturesOrdered<_> =
                 block_heights_prefixes
                     .iter()
