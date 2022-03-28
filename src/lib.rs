@@ -42,8 +42,7 @@ async fn start(
     let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
     // Owerride S3 endpoint in case you want to use custom solution
     // like Minio or Localstack as a S3 compatible storage
-    if s3_endpoint.is_some() {
-        let endpoint = s3_endpoint.as_ref().unwrap();
+    if let Some(endpoint) = s3_endpoint {
         s3_conf = s3_conf.endpoint_resolver(Endpoint::immutable(endpoint.parse::<Uri>().unwrap()));
         tracing::info!(
             target: LAKE_FRAMEWORK,

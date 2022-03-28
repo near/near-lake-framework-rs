@@ -48,6 +48,28 @@ async fn handle_streamer_message(
 
 ## How to use
 
+## Custom S3 storage
+
+In case you want to run you own near-lake instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
+You can owerride default S3 API endpoint by using `s3_endpoint` option
+
+- run minio
+
+```bash
+$ mkdir -p /data/near-lake-custom && minio server /data
+```
+
+- add `s3_endpoint` parameter to LakeConfig instance
+
+```bash
+let config = LakeConfig {
+    s3_endpoint: "http://0.0.0.0:9000".to_string(), // AWS S3 custom API endpoint
+    s3_bucket_name: "near-lake-custom".to_string(), // AWS S3 bucket name
+    s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
+    start_block_height: 1, // the latest block height
+};
+```
+
 ### AWS S3 Credentials
 
 In order to be able to get objects from the AWS S3 bucket you need to provide the AWS credentials.
@@ -85,6 +107,7 @@ Everything should be configured before the start of your indexer application via
 
 Available parameters:
 
+* `s3_endpoint: String` - provide the AWS S3 custom API ednpoint
 * `s3_bucket_name: String` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
 * `s3_region_name: String` - provide the region for AWS S3 bucket
 * `start_block_height: u64` - block height to start the stream from
