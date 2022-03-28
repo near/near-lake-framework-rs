@@ -50,7 +50,7 @@ async fn handle_streamer_message(
 
 ## Custom S3 storage
 
-In case you want to run you own near-lake instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
+In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
 You can owerride default S3 API endpoint by using `s3_endpoint` option
 
 - run minio

@@ -1,5 +1,5 @@
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_s3::{Client, Region, Endpoint};
+use aws_sdk_s3::{Client, Endpoint, Region};
 
 use futures::stream::StreamExt;
 use http::Uri;
