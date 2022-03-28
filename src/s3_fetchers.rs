@@ -8,9 +8,14 @@ pub(crate) async fn list_blocks(
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
 ) -> anyhow::Result<Vec<crate::types::BlockHeight>> {
+    tracing::debug!(
+        target: crate::LAKE_FRAMEWORK,
+        "Fetching blocks from S3, after {}...",
+        start_from_block_height
+    );
     let response = s3_client
         .list_objects_v2()
-        .max_keys(1000)
+        .max_keys(100)
         .delimiter("/".to_string())
         .start_after(format!("{:0>12}", start_from_block_height))
         .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
@@ -48,7 +53,7 @@ pub(crate) async fn fetch_streamer_message(
 ) -> anyhow::Result<near_indexer_primitives::StreamerMessage> {
     let block_view = {
         let response = loop {
-            if let Ok(response) = s3_client
+            match s3_client
                 .get_object()
                 .bucket(s3_bucket_name)
                 .key(format!("{:0>12}/block.json", block_height))
@@ -56,7 +61,15 @@ pub(crate) async fn fetch_streamer_message(
                 .send()
                 .await
             {
-                break response;
+                Ok(response) => break response,
+                Err(err) => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Failed to get {}/block.json. Retrying immediately\n{:#?}",
+                        block_height,
+                        err
+                    );
+                }
             }
         };
 
@@ -88,7 +101,7 @@ async fn fetch_shard_or_retry(
     shard_id: u64,
 ) -> near_indexer_primitives::IndexerShard {
     loop {
-        if let Ok(response) = s3_client
+        match s3_client
             .get_object()
             .bucket(s3_bucket_name)
             .key(format!("{:0>12}/shard_{}.json", block_height, shard_id))
@@ -96,12 +109,22 @@ async fn fetch_shard_or_retry(
             .send()
             .await
         {
-            let body_bytes = response.body.collect().await.unwrap().into_bytes();
+            Ok(response) => {
+                let body_bytes = response.body.collect().await.unwrap().into_bytes();
 
-            break serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
-                body_bytes.as_ref(),
-            )
-            .unwrap();
-        };
+                break serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
+                    body_bytes.as_ref(),
+                )
+                .unwrap();
+            }
+            Err(err) => {
+                tracing::debug!(
+                    target: crate::LAKE_FRAMEWORK,
+                    "Failed to fetch shard #{}, retrying immediately\n{:#?}",
+                    shard_id,
+                    err
+                );
+            }
+        }
     }
 }
