@@ -4,6 +4,9 @@ NEAR Lake Framework is a small library companion to [NEAR Lake](https://github.c
 your own indexer that subscribes to the stream of blocks from the NEAR Lake data source and create your own logic to process
 the NEAR Protocol data.
 
+> [Official NEAR Lake Framework launch announcement](https://gov.near.org/t/announcement-near-lake-framework-brand-new-word-in-indexer-building-approach/17668) has been published on the NEAR Gov Forum
+> Greetings from the Data Platform Team! We are happy and proud to announce an MVP release of a brand new word in indexer building approach - NEAR Lake Framework.
+
 ## Example
 
 ```rust
@@ -45,6 +48,15 @@ async fn handle_streamer_message(
     );
 }
 ```
+
+Video tutorial:
+
+https://youtu.be/GsF7I93K-EQ
+
+### More examples
+
+- https://github.com/near/near-lake-raw-printer simple example of a data printer built on top of NEAR Lake Framework
+- https://github.com/near-examples/near-lake-accounts-watcher another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
 
 ## How to use
 
