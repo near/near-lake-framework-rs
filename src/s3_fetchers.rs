@@ -79,7 +79,7 @@ pub(crate) async fn fetch_streamer_message(
             .unwrap()
     };
 
-    let shards: Vec<near_indexer_primitives::IndexerShard> = (0..block_view.header.chunks_included)
+    let shards: Vec<near_indexer_primitives::IndexerShard> = (0..block_view.chunks.len() as u64)
         .collect::<Vec<u64>>()
         .into_iter()
         .map(|shard_id| fetch_shard_or_retry(s3_client, s3_bucket_name, block_height, shard_id))
