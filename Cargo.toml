@@ -1,9 +1,18 @@
 [package]
 name = "near-lake-framework"
-version = "0.2.0"
+version = "0.0.0" # managed by cargo-workspaces, see below
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/near/near-lake-framework"
+description = "Library to connect to the NEAR Lake S3 and stream the data"
+categories = ["asynchronous", "api-bindings", "network-programming"]
+keywords = ["near", "api", "jsonrpc", "rpc", "async"]
 authors = ["Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
 rust-version = "1.58.1"
+
+# cargo-workspaces
+[workspace.metadata.workspaces]
+version = "0.2.0"
 
 [dependencies]
 anyhow = "1.0.51"
