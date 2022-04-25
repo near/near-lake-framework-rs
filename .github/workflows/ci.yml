@@ -55,7 +55,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-20.04
-    needs: [test, clippy, cargo-fmt]
+    needs: [rustfmt, rustclippy]
     if: github.ref == 'refs/heads/master'
 
     steps:
