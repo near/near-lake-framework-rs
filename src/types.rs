@@ -1,3 +1,4 @@
+/// Type alias represents the block height
 pub type BlockHeight = u64;
 
 /// Configuration struct for NEAR Lake Framework
