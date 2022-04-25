@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2022-04-25
 
-> Release Page: <https://github.com/near/near-jsonrpc-client-rs/releases/tag/v0.2.0>
+The first public release. See [announcement on NEAR Gov Forum](https://gov.near.org/t/announcement-near-lake-framework-brand-new-word-in-indexer-building-approach/17668)
 
-[0.2.0]: https://github.com/near/near-jsonrpc-client-rs/releases/tag/v0.2.0
+> Release Page: <https://github.com/near/near-lake-framework/releases/tag/v0.2.0>
+
+[0.2.0]: https://github.com/near/near-lake-framework/releases/tag/v0.2.0
