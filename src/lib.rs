@@ -317,10 +317,11 @@ async fn start(
             Err(err) => {
                 tracing::error!(
                     target: LAKE_FRAMEWORK,
-                    "Failed to list objects from bucket {}: {}. Retrying...",
+                    "Failed to list objects from bucket {}: {}. Retrying in 1s...",
                     &config.s3_bucket_name,
                     err,
                 );
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
         }
     }
