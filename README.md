@@ -118,7 +118,7 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = { git = "https://github.com/near/near-lake-framework" }
+near-lake-framework = "0.2.0"
 ```
 
 ## Configuration
