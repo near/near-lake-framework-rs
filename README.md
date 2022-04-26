@@ -4,6 +4,10 @@ NEAR Lake Framework is a small library companion to [NEAR Lake](https://github.c
 your own indexer that subscribes to the stream of blocks from the NEAR Lake data source and create your own logic to process
 the NEAR Protocol data.
 
+[![crates.io](https://img.shields.io/crates/v/near-lake-framework?label=latest)](https://crates.io/crates/near-lake-framework)
+[![Documentation](https://docs.rs/near-lake-framework/badge.svg)](https://docs.rs/near-lake-framework)
+![MIT or Apache 2.0 licensed](https://img.shields.io/crates/l/near-lake-framework.svg)
+
 ---
 
 [Official NEAR Lake Framework launch announcement](https://gov.near.org/t/announcement-near-lake-framework-brand-new-word-in-indexer-building-approach/17668) has been published on the NEAR Gov Forum
@@ -114,7 +118,7 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = { git = "https://github.com/near/near-lake-framework" }
+near-lake-framework = "0.2.0"
 ```
 
 ## Configuration
