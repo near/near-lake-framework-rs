@@ -261,64 +261,67 @@ async fn start(
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
-        if let Ok(block_heights_prefixes) =
-            s3_fetchers::list_blocks(&s3_client, &config.s3_bucket_name, start_from_block_height)
-                .await
+        match s3_fetchers::list_blocks(&s3_client, &config.s3_bucket_name, start_from_block_height)
+            .await
         {
-            if block_heights_prefixes.is_empty() {
+            Ok(block_heights_prefixes) => {
+                if block_heights_prefixes.is_empty() {
+                    tracing::debug!(
+                        target: LAKE_FRAMEWORK,
+                        "No new blocks on S3, retry in 2s..."
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    continue;
+                }
                 tracing::debug!(
                     target: LAKE_FRAMEWORK,
-                    "No new blocks on S3, retry in 2s..."
+                    "Received {} blocks from S3",
+                    block_heights_prefixes.len()
                 );
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                continue;
-            }
-            tracing::debug!(
-                target: LAKE_FRAMEWORK,
-                "Received {} blocks from S3",
-                block_heights_prefixes.len()
-            );
-            let mut streamer_messages_futures: futures::stream::FuturesOrdered<_> =
-                block_heights_prefixes
-                    .iter()
-                    .map(|block_height| {
-                        s3_fetchers::fetch_streamer_message(
-                            &s3_client,
-                            &config.s3_bucket_name,
-                            *block_height,
-                        )
-                    })
-                    .collect();
+                let mut streamer_messages_futures: futures::stream::FuturesOrdered<_> =
+                    block_heights_prefixes
+                        .iter()
+                        .map(|block_height| {
+                            s3_fetchers::fetch_streamer_message(
+                                &s3_client,
+                                &config.s3_bucket_name,
+                                *block_height,
+                            )
+                        })
+                        .collect();
 
-            while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-                let streamer_message =
-                    streamer_message_result.expect("Failed to unwrap StreamerMessage from Result");
-                // check if we have `last_processed_block_hash` (might be None only on start)
-                if let Some(prev_block_hash) = last_processed_block_hash {
-                    // compare last_processed_block_hash` with `block.header.prev_hash` of the current
-                    // block (ensure we don't miss anything from S3)
-                    // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
-                    if prev_block_hash != streamer_message.block.header.prev_hash {
-                        tracing::warn!(
-                            target: LAKE_FRAMEWORK,
-                            "`prev_hash` does not match, refetching the data from S3 in 200ms",
-                        );
-                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                        break;
+                while let Some(streamer_message_result) = streamer_messages_futures.next().await {
+                    let streamer_message = streamer_message_result
+                        .expect("Failed to unwrap StreamerMessage from Result");
+                    // check if we have `last_processed_block_hash` (might be None only on start)
+                    if let Some(prev_block_hash) = last_processed_block_hash {
+                        // compare last_processed_block_hash` with `block.header.prev_hash` of the current
+                        // block (ensure we don't miss anything from S3)
+                        // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
+                        if prev_block_hash != streamer_message.block.header.prev_hash {
+                            tracing::warn!(
+                                target: LAKE_FRAMEWORK,
+                                "`prev_hash` does not match, refetching the data from S3 in 200ms",
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                            break;
+                        }
                     }
+                    // store current block hash as `last_processed_block_hash` for next iteration
+                    last_processed_block_hash = Some(streamer_message.block.header.hash);
+                    // update start_after key
+                    start_from_block_height = streamer_message.block.header.height + 1;
+                    streamer_message_sink.send(streamer_message).await.unwrap();
                 }
-                // store current block hash as `last_processed_block_hash` for next iteration
-                last_processed_block_hash = Some(streamer_message.block.header.hash);
-                // update start_after key
-                start_from_block_height = streamer_message.block.header.height + 1;
-                streamer_message_sink.send(streamer_message).await.unwrap();
             }
-        } else {
-            tracing::error!(
-                target: LAKE_FRAMEWORK,
-                "Failed to list objects from bucket {}. Retrying...",
-                &config.s3_bucket_name
-            );
+            Err(err) => {
+                tracing::error!(
+                    target: LAKE_FRAMEWORK,
+                    "Failed to list objects from bucket {}: {}. Retrying...",
+                    &config.s3_bucket_name,
+                    err,
+                );
+            }
         }
     }
 }
