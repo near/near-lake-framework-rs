@@ -19,16 +19,17 @@ Greetings from the Data Platform Team! We are happy and proud to announce an MVP
 
 ```rust
 use futures::StreamExt;
-use near_lake_framework::LakeConfig;
+use near_lake_framework::LakeConfigBuilder;
 
 #[tokio::main]
 async fn main() -> Result<(), tokio::io::Error> {
     // create a NEAR Lake Framework config
-    let config = LakeConfig {
-        s3_bucket_name: "near-lake-testnet".to_string(), // AWS S3 bucket name
-        s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
-        start_block_height: 82422587, // the latest block height we've got from explorer.near.org for testnet
-    };
+    let config = LakeConfigBuilder::default()
+        .s3_bucket_name("near-lake-data-testnet")
+        .s3_region_name("eu-west-1")
+        .start_block_height(82422587)
+        .build()
+        .expect("Failed to build Lakeconfig");
 
     // instantiate the NEAR Lake Framework Stream
     let stream = near_lake_framework::streamer(config);
@@ -82,17 +83,35 @@ $ mkdir -p /data/near-lake-custom && minio server /data
 - add `s3_endpoint` parameter to LakeConfig instance
 
 ```bash
-let config = LakeConfig {
-    s3_endpoint: "http://0.0.0.0:9000".to_string(), // AWS S3 custom API endpoint
-    s3_bucket_name: "near-lake-custom".to_string(), // AWS S3 bucket name
-    s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
-    start_block_height: 1, // the latest block height
-};
+let config = LakeConfigBuilder::default()
+        .s3_bucket_name("near-lake-custom")
+        .start_block_height(1)
+        .with_custom_endpoint("http://0.0.0.0:9000")
+        .build()
+        .expect("Failed to build Lakeconfig");
 ```
 
 ### AWS S3 Credentials
 
 In order to be able to get objects from the AWS S3 bucket you need to provide the AWS credentials.
+
+#### Passing credentials to the config builder
+
+```rust
+let config = LakeConfigBuilder::default()
+ .s3_bucket_name("near-lake-testnet")
+ .s3_region_name("eu-central-1")
+ .start_block_height(82422587)
+ .with_custom_credentials(
+      "AKIAIOSFODNN7EXAMPLE",
+      "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+  )
+ .build()
+ .expect("Failed to build LakeConfig");
+```
+**You should never hardcode your credentials, it is insecure. Use the described method to pass the credentials you read from CLI arguments**
+
+#### File-based AWS credentials
 
 AWS default profile configuration with aws configure looks similar to the following:
 
@@ -118,19 +137,20 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = "0.2.0"
+near-lake-framework = "0.3.0"
 ```
 
 ## Configuration
 
-Everything should be configured before the start of your indexer application via `LakeConfig` struct.
+Everything should be configured before the start of your indexer application via `LakeConfigBuilder` struct.
 
 Available parameters:
 
-* `s3_endpoint: String` - provide the AWS S3 custom API ednpoint
-* `s3_bucket_name: String` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
-* `s3_region_name: String` - provide the region for AWS S3 bucket
-* `start_block_height: u64` - block height to start the stream from
+- `s3_bucket_name(value: impl Into<String>)` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
+- `start_block_height(value: u64)` - block height to start the stream from
+- *optional* `with_custom_endpoint(value: impl Into<String>)` - provide the AWS S3 custom API ednpoint
+- *optional* `s3_region_name(value: impl Into<String>)` - provide the region for AWS S3 bucket
+- *optional* `with_custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)` - provide custom credentials to AWS
 
 ## Cost estimates
 
