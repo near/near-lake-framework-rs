@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```
 - New example (`printer`) is added to `examples` folder
 
+### Breaking change
+
+`LakeConfig` has a breaking change as we've added an optional field `s3_credentials`. Please, consider migrating to use `LakeConfigBuilder` instead of directly crafting the `Lakeconfig`
+
 ## [0.2.0] - 2022-04-25
 
 The first public release. See [announcement on NEAR Gov Forum](https://gov.near.org/t/announcement-near-lake-framework-brand-new-word-in-indexer-building-approach/17668)

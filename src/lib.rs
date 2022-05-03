@@ -67,7 +67,7 @@
 //!     .s3_bucket_name("near-lake-testnet")
 //!     .s3_region_name("eu-central-1")
 //!     .start_block_height(82422587)
-//!     .with_custom_credentials(
+//!     .custom_credentials(
 //!          "AKIAIOSFODNN7EXAMPLE",
 //!          "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
 //!      )
@@ -122,7 +122,7 @@
 //! let config = LakeConfigBuilder::default()
 //!     .s3_bucket_name("near-lake-custom")
 //!     .start_block_height(1)
-//!     .with_custom_endpoint("http://0.0.0.0:9000")
+//!     .custom_endpoint("http://0.0.0.0:9000")
 //!     .build()
 //!     .expect("Failed to build LakeConfig");
 //!```
@@ -135,9 +135,9 @@
 //!
 //!* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
 //!* [`start_block_height(value: u64)`](LakeConfigBuilder::start_block_height) - block height to start the stream from
-//!* *optional* [`with_custom_endpoint(value: impl Into<String>)`](LakeConfigBuilder::with_custom_endpoint) - provide the AWS S3 custom API ednpoint
+//!* *optional* [`custom_endpoint(value: impl Into<String>)`](LakeConfigBuilder::with_custom_endpoint) - provide the AWS S3 custom API ednpoint
 //!* *optional* [`s3_region_name(value: impl Into<String>)`](LakeConfigBuilder::s3_region_name) - provide the region for AWS S3 bucket
-//!* *optional* [`with_custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)`](LakeConfigBuilder::with_custom_credentials) - provide custom credentials to AWS
+//!* *optional* [`custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)`](LakeConfigBuilder::with_custom_credentials) - provide custom credentials to AWS
 //!
 //!## Cost estimates
 //!
@@ -201,7 +201,7 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 /// let config = LakeConfigBuilder::default()
 ///     .s3_bucket_name("near-lake-data-testnet")
 ///     .start_block_height(82422587)
-///     .with_custom_credentials(
+///     .custom_credentials(
 ///          "AKIAIOSFODNN7EXAMPLE",
 ///          "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
 ///      )

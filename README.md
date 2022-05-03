@@ -86,7 +86,7 @@ $ mkdir -p /data/near-lake-custom && minio server /data
 let config = LakeConfigBuilder::default()
         .s3_bucket_name("near-lake-custom")
         .start_block_height(1)
-        .with_custom_endpoint("http://0.0.0.0:9000")
+        .custom_endpoint("http://0.0.0.0:9000")
         .build()
         .expect("Failed to build Lakeconfig");
 ```
@@ -102,7 +102,7 @@ let config = LakeConfigBuilder::default()
  .s3_bucket_name("near-lake-testnet")
  .s3_region_name("eu-central-1")
  .start_block_height(82422587)
- .with_custom_credentials(
+ .custom_credentials(
       "AKIAIOSFODNN7EXAMPLE",
       "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
   )
