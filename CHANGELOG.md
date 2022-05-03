@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Introduce `LakeConfigBuilder` for creating configs
-- Now you can provide AWS credentials throguht the `LakeConfig`
+- Now you can provide AWS credentials through the `LakeConfig`
   ```rust
   let config = LakeConfigBuilder::default()
     .s3_bucket_name("near-lake-data-testnet")
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     .build()
     .expect("Filed to build LakeConfig");
   ```
-- Add `examples` to the repository with the `printer` example
+- New example (`printer`) is added to `examples` folder
 
 ## [0.2.0] - 2022-04-25
 
