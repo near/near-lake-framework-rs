@@ -135,9 +135,9 @@
 //!
 //!* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
 //!* [`start_block_height(value: u64)`](LakeConfigBuilder::start_block_height) - block height to start the stream from
-//!* *optional* [`custom_endpoint(value: impl Into<String>)`](LakeConfigBuilder::with_custom_endpoint) - provide the AWS S3 custom API ednpoint
+//!* *optional* [`custom_endpoint(value: impl Into<String>)`](LakeConfigBuilder::custom_endpoint) - provide the AWS S3 custom API ednpoint
 //!* *optional* [`s3_region_name(value: impl Into<String>)`](LakeConfigBuilder::s3_region_name) - provide the region for AWS S3 bucket
-//!* *optional* [`custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)`](LakeConfigBuilder::with_custom_credentials) - provide custom credentials to AWS
+//!* *optional* [`custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)`](LakeConfigBuilder::custom_credentials) - provide custom credentials to AWS
 //!
 //!## Cost estimates
 //!

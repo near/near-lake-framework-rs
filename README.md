@@ -148,9 +148,9 @@ Available parameters:
 
 - `s3_bucket_name(value: impl Into<String>)` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
 - `start_block_height(value: u64)` - block height to start the stream from
-- *optional* `with_custom_endpoint(value: impl Into<String>)` - provide the AWS S3 custom API ednpoint
+- *optional* `custom_endpoint(value: impl Into<String>)` - provide the AWS S3 custom API ednpoint
 - *optional* `s3_region_name(value: impl Into<String>)` - provide the region for AWS S3 bucket
-- *optional* `with_custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)` - provide custom credentials to AWS
+- *optional* `custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)` - provide custom credentials to AWS
 
 ## Cost estimates
 

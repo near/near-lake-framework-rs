@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   let config = LakeConfigBuilder::default()
     .s3_bucket_name("near-lake-data-testnet")
     .start_block_height(88220926)
-    .with_custom_credentials(
+    .custom_credentials(
         "AKIAIOSFODNN7EXAMPLE",
         "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
     )
