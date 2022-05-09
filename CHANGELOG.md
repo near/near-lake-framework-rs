@@ -8,17 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Introduce `LakeConfigBuilder` for creating configs
-- Now you can provide AWS credentials through the `LakeConfig`
   ```rust
-  let config = LakeConfigBuilder::default()
-    .s3_bucket_name("near-lake-data-testnet")
+  let config = LakeConfigBuilder.default()
+    .testnet()
     .start_block_height(88220926)
-    .custom_credentials(
-        "AKIAIOSFODNN7EXAMPLE",
-        "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-    )
     .build()
-    .expect("Filed to build LakeConfig");
+    .expect("Failed to build LakeConfig");
+  ```
+- Now you can provide custom AWS SDK S3 `Config`
+  ```rust
+  use aws_sdk_s3::Endpoint;
+  use http::Uri;
+  use near_lake_framework::LakeConfigBuilder;
+
+
+  let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+  s3_conf = s3_conf
+    .endpoint_resolver(
+      Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
+    .build();
+
+  let config = LakeConfigBuilder::default()
+    .s3_conf(s3_conf)
+    .s3_bucket_name("near-lake-data-custom")
+    .start_block_height(1)
+    .build()
+    .expect("Failed to build LakeConfig");
   ```
 - New example (`printer`) is added to `examples` folder
 
