@@ -7,15 +7,14 @@
 //! ## Example
 
 //! ```rust
-//!use futures::StreamExt;
+//! use futures::StreamExt;
 //! use near_lake_framework::LakeConfigBuilder;
-
+//!
 //! #[tokio::main]
 //! async fn main() -> Result<(), tokio::io::Error> {
 //!    // create a NEAR Lake Framework config
 //!    let config = LakeConfigBuilder::default()
-//!        .s3_bucket_name("near-lake-testnet")
-//!        .s3_region_name("eu-central-1")
+//!        .testnet()
 //!        .start_block_height(82422587)
 //!        .build()
 //!        .expect("Failed to build LakeConfig");
@@ -53,26 +52,41 @@
 //!
 //! ### More examples
 //!
-//!- <https://github.com/near-examples/near-lake-raw-printer> simple example of a data printer built on top of NEAR Lake Framework
-//!- <https://github.com/near-examples/near-lake-accounts-watcher> another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
+//! - <https://github.com/near-examples/near-lake-raw-printer> simple example of a data printer built on top of NEAR Lake Framework
+//! - <https://github.com/near-examples/near-lake-accounts-watcher> another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
 //!
-//!## How to use
+//! - <https://github.com/near-examples/indexer-tx-watcher-example-lake> an example of the indexer built on top of NEAR Lake Framework that watches for transactions related to specified account(s)
+//! - <https://github.com/octopus-network/octopus-near-indexer-s3> a community-made project that uses NEAR Lake Framework
 //!
-//!### AWS S3 Credentials
+//! ## How to use
 //!
-//!In order to be able to get objects from the AWS S3 bucket you need to provide the AWS credentials.
+//! ### AWS S3 Credentials
+//!
+//! In order to be able to get objects from the AWS S3 bucket you need to provide the AWS credentials.
 //! #### Passing credentials to the config builder
+//!
 //! ```rust
+//! use near_lake_framework::LakeConfigBuilder;
+//!
+//! # async fn main() {
+//! let credentials = aws_types::Credentials::new(
+//!     "AKIAIOSFODNN7EXAMPLE",
+//!     "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+//!     None,
+//!     None,
+//!     "custom_credentials",
+//! );
+//! let s3_config = aws_sdk_s3::Config::builder()
+//!     .credentials_provider(credentials)
+//!     .build();
+//!
 //! let config = LakeConfigBuilder::default()
-//!     .s3_bucket_name("near-lake-testnet")
-//!     .s3_region_name("eu-central-1")
-//!     .start_block_height(82422587)
-//!     .custom_credentials(
-//!          "AKIAIOSFODNN7EXAMPLE",
-//!          "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-//!      )
-//!     .build()
-//!     .expect("Failed to build LakeConfig");
+//!      .s3_config(s3_config)
+//!      .s3_bucket_name("near-lake-data-custom")
+//!      .start_block_height(1)
+//!      .build()
+//!      .expect("Failed to build LakeConfig");
+//! # }
 //! ```
 //!
 //! **You should never hardcode your credentials, it is insecure. Use the described method to pass the credentials you read from CLI arguments**
@@ -105,81 +119,89 @@
 //!near-lake-framework = "0.3.0"
 //!```
 //!
-//!### Custom S3 storage
+//! ### Custom S3 storage
 //!
-//!In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
-//!You can owerride default S3 API endpoint by using `s3_endpoint` option
+//! In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
+//! You can owerride default S3 API endpoint by using `s3_endpoint` option
 //!
-//!- run minio
+//! - run minio
 //!
-//!```bash
-//!$ mkdir -p /data/near-lake-custom && minio server /data
-//!```
+//! ```bash
+//! $ mkdir -p /data/near-lake-custom && minio server /data
+//! ```
 //!
-//!- add `s3_endpoint` parameter to LakeConfig instance
+//! - pass custom `aws_sdk_s3::config::Config` to the [LakeConfigBuilder]
 //!
-//!```rust
+//! ```rust
+//! use aws_sdk_s3::Endpoint;
+//! use http::Uri;
+//! use near_lake_framework::LakeConfigBuilder;
+//!
+//! # async fn main() {
+//! let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+//! s3_conf = s3_conf
+//!     .endpoint_resolver(
+//!             Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
+//!     .build();
+//!
 //! let config = LakeConfigBuilder::default()
-//!     .s3_bucket_name("near-lake-custom")
+//!     .s3_conf(s3_conf)
+//!     .s3_bucket_name("near-lake-data-custom")
 //!     .start_block_height(1)
-//!     .custom_endpoint("http://0.0.0.0:9000")
 //!     .build()
 //!     .expect("Failed to build LakeConfig");
-//!```
+//! # }
+//! ```
 //!
-//!## Configuration
+//! ## Configuration
 //!
-//!Everything should be configured before the start of your indexer application via `LakeConfigBuilder` struct.
+//! Everything should be configured before the start of your indexer application via `LakeConfigBuilder` struct.
 //!
-//!Available parameters:
+//! Available parameters:
 //!
-//!* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
 //!* [`start_block_height(value: u64)`](LakeConfigBuilder::start_block_height) - block height to start the stream from
-//!* *optional* [`custom_endpoint(value: impl Into<String>)`](LakeConfigBuilder::custom_endpoint) - provide the AWS S3 custom API ednpoint
-//!* *optional* [`s3_region_name(value: impl Into<String>)`](LakeConfigBuilder::s3_region_name) - provide the region for AWS S3 bucket
-//!* *optional* [`custom_credentials(access_key_id: impl Into<String>, secret_access_key: impl Into<String>)`](LakeConfigBuilder::custom_credentials) - provide custom credentials to AWS
+//!* *optional* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (you need to provide it if you use custom S3-compatible service, otherwise you can use [LakeConfigBuilder::mainnet] and [LakeConfigBuilder::testnet])
+//!* *optional* [`LakeConfigBuilder::s3_config(value: aws_sdk_s3::config::Config`](LakeConfigBuilder::s3_config) - provide custom AWS SDK S3 Config
 //!
-//!## Cost estimates
+//! ## Cost estimates
 //!
-//!**TL;DR** approximately $18.15 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
+//! **TL;DR** approximately $18.15 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
 //!
-//!Explanation:
+//! Explanation:
 //!
-//!Assuming NEAR Protocol produces accurately 1 block per second (which is really not, the average block production time is 1.3s). A full day consists of 86400 seconds, that's the max number of blocks that can be produced.
+//! Assuming NEAR Protocol produces accurately 1 block per second (which is really not, the average block production time is 1.3s). A full day consists of 86400 seconds, that's the max number of blocks that can be produced.
 //!
-//!According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.005 per 1000 requests and `get` is charged for $0.0004 per 1000 requests.
+//! According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.005 per 1000 requests and `get` is charged for $0.0004 per 1000 requests.
 //!
-//!Calculations (assuming we are following the tip of the network all the time):
+//! Calculations (assuming we are following the tip of the network all the time):
 //!
+//! ```text
+//! 86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.173 * 30 days = $5.19
+//! ```
+//! **Note:** 5 requests for each block means we have 4 shards (1 file for common block data and 4 separate files for each shard)
+//!
+//! And a number of `list` requests we need to perform for 30 days:
+//!
+//! ```text
+//! 86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.432 * 30 days = $12.96
+//!
+//! $5.19 + $12.96 = $18.15
 //!```
-//!86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.173 * 30 days = $5.19
-//!```
-//!**Note:** 5 requests for each block means we have 4 shards (1 file for common block data and 4 separate files for each shard)
 //!
-//!And a number of `list` requests we need to perform for 30 days:
+//! The price depends on the number of shards
 //!
-//!```
-//!86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.432 * 30 days = $12.96
+//! ## Future plans
 //!
-//!$5.19 + $12.96 = $18.15
-//!```
+//! We use Milestones with clearly defined acceptance criteria:
 //!
-//!The price depends on the number of shards
-//!
-//!## Future plans
-//!
-//!We use Milestones with clearly defined acceptance criteria:
-//!
-//!* [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
-//!* [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
-use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_s3::{Client, Endpoint, Region};
+//! * [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
+//! * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
+use aws_sdk_s3::Client;
 
 #[macro_use]
 extern crate derive_builder;
 
 use futures::stream::StreamExt;
-use http::Uri;
 use tokio::sync::mpsc;
 
 pub use near_indexer_primitives;
@@ -197,22 +219,18 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 /// use near_lake_framework::LakeConfigBuilder;
 /// use tokio::sync::mpsc;
 ///
-/// # asyn fn main() {
-/// let config = LakeConfigBuilder::default()
-///     .s3_bucket_name("near-lake-data-testnet")
-///     .start_block_height(82422587)
-///     .custom_credentials(
-///          "AKIAIOSFODNN7EXAMPLE",
-///          "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-///      )
-///     .build()
-///     .expect("Failed to build LakeConfig");
+/// # async fn main() {
+///    let config = LakeConfigBuilder::default()
+///        .testnet()
+///        .start_block_height(82422587)
+///        .build()
+///        .expect("Failed to build LakeConfig");
 ///
-/// let stream = near_lake_framework::streamer(config);
+///     let stream = near_lake_framework::streamer(config);
 ///
-/// while let Some(streamer_message) = stream.recv().await {
-///     eprintln!("{:#?}", streamer_message);
-/// }
+///     while let Some(streamer_message) = stream.recv().await {
+///         eprintln!("{:#?}", streamer_message);
+///     }
 /// # }
 /// ```
 pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::StreamerMessage> {
@@ -225,38 +243,27 @@ async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: LakeConfig,
 ) {
-    // instantiate AWS S3 Client
-    let region_provider =
-        RegionProviderChain::first_try(Some(config.s3_region_name).map(Region::new))
-            .or_default_provider()
-            .or_else(Region::new("eu-central-1"));
-    let shared_config = aws_config::from_env().region(region_provider).load().await;
-    let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
-    // Owerride S3 endpoint in case you want to use custom solution
-    // like Minio or Localstack as a S3 compatible storage
-    if let Some(endpoint) = config.s3_endpoint {
-        s3_conf = s3_conf.endpoint_resolver(Endpoint::immutable(endpoint.parse::<Uri>().unwrap()));
-        tracing::info!(
-            target: LAKE_FRAMEWORK,
-            "Custom S3 endpoint used: {}",
-            endpoint
-        );
-    }
-
-    if let Some(credentials) = config.s3_credentials {
-        s3_conf = s3_conf.credentials_provider(credentials);
-    }
-
-    let s3_client = Client::from_conf(s3_conf.build());
-
     let mut start_from_block_height = config.start_block_height;
+    let s3_bucket_name = config
+        .s3_bucket_name
+        .expect("`s3_bucket_name` expected to be set by this time");
+
+    let s3_client = if let Some(config) = config.s3_config {
+        Client::from_conf(config)
+    } else {
+        let shared_config = aws_config::from_env().load().await;
+        let s3_config = aws_sdk_s3::config::Builder::from(&shared_config)
+            .region(aws_types::region::Region::new("eu-central-1"))
+            .build();
+        Client::from_conf(s3_config)
+    };
+
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
         if let Ok(block_heights_prefixes) =
-            s3_fetchers::list_blocks(&s3_client, &config.s3_bucket_name, start_from_block_height)
-                .await
+            s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
         {
             if block_heights_prefixes.is_empty() {
                 tracing::debug!(
@@ -277,7 +284,7 @@ async fn start(
                     .map(|block_height| {
                         s3_fetchers::fetch_streamer_message(
                             &s3_client,
-                            &config.s3_bucket_name,
+                            &s3_bucket_name,
                             *block_height,
                         )
                     })
@@ -310,7 +317,7 @@ async fn start(
             tracing::error!(
                 target: LAKE_FRAMEWORK,
                 "Failed to list objects from bucket {}. Retrying...",
-                &config.s3_bucket_name
+                &s3_bucket_name
             );
         }
     }

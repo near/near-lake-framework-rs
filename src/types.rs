@@ -6,91 +6,82 @@ pub type BlockHeight = u64;
 /// Building the `LakeConfig` example:
 /// ```
 /// use near_lake_framework::LakeConfigBuilder;
+///
 /// # async fn main() {
 ///    let config = LakeConfigBuilder::default()
-///        .s3_bucket_name("near-lake-data-testnet")
+///        .testnet()
 ///        .start_block_height(82422587)
 ///        .build()
 ///        .expect("Failed to build LakeConfig");
 /// # }
 /// ```
 #[derive(Default, Builder, Debug)]
+#[builder(pattern = "owned")]
 pub struct LakeConfig {
-    /// AWS S3 compatible custom endpoint
-    ///
-    /// In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
-    ///
-    /// You can owerride default S3 API endpoint by using `s3_endpoint` option or [LakeConfigBuilder::custom_endpoint]"]
-    #[builder(setter(custom, strip_option, name = "custom_endpoint"), default)]
-    pub s3_endpoint: Option<String>,
     /// AWS S3 Bucket name
-    #[builder(setter(into))]
-    pub s3_bucket_name: String,
-    /// AWS S3 Region name for the provided Bucket
-    #[builder(setter(into), default = "\"eu-central-1\".to_string()")]
-    pub s3_region_name: String,
+    #[builder(setter(into, strip_option))]
+    pub s3_bucket_name: Option<String>,
     /// Defines the block height to start indexing from
     pub start_block_height: u64,
-    #[builder(setter(custom, strip_option, name = "custom_credentials"), default)]
-    /// AWS S3 Credentials
-    /// By default NEAR Lake Framework will use the AWS credentials stored in the file `~/.aws/credentials`.
-    /// However, sometimes you might want to pass the credentials through the CLI arguments. You can set [LakeConfig::s3_credentials] instead of using the file.
+    /// Custom aws_sdk_s3::config::Config
+    /// ## Use-case: custom endpoint
+    /// You might want to stream data from the custom S3-compatible source () . In order to do that you'd need to pass `aws_sdk_s3::config::Config` configured
+    /// ```
+    /// use aws_sdk_s3::Endpoint;
+    /// use http::Uri;
+    /// use near_lake_framework::LakeConfigBuilder;
     ///
-    /// See [LakeConfigBuilder::custom_credentials]
-    pub s3_credentials: Option<aws_types::Credentials>,
+    /// # async fn main() {
+    ///     let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+    ///     s3_conf = s3_conf
+    ///         .endpoint_resolver(
+    ///             Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
+    ///         .build();
+    ///
+    ///     let config = LakeConfigBuilder::default()
+    ///         .s3_conf(s3_conf)
+    ///         .s3_bucket_name("near-lake-data-custom")
+    ///         .start_block_height(1)
+    ///         .build()
+    ///         .expect("Failed to build LakeConfig");
+    /// # }
+    /// ```
+    #[builder(setter(strip_option), default)]
+    pub s3_config: Option<aws_sdk_s3::config::Config>,
 }
 
 impl LakeConfigBuilder {
-    /// AWS S3 compatible custom endpoint
-    ///
-    /// In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
-    ///
-    /// You can owerride default S3 API endpoint by using `custom_endpoint` method
+    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for mainnet
     /// ```
     /// use near_lake_framework::LakeConfigBuilder;
+    ///
     /// # async fn main() {
-    /// let config = LakeConfigBuilder::default()
-    ///     .s3_bucket_name("near-lake-data-testnet")
-    ///     .start_block_height(82422587)
-    ///     .custom_endpoint("http://0.0.0.0:9000")
-    ///     .build()
-    ///     .expect("Failed to build LakeConfig");
+    ///    let config = LakeConfigBuilder::default()
+    ///        .mainnet()
+    ///        .start_block_height(65231161)
+    ///        .build()
+    ///        .expect("Failed to build LakeConfig");
     /// # }
     /// ```
-    pub fn custom_endpoint(&mut self, endpoint: impl Into<String>) -> &mut Self {
-        self.s3_endpoint = Some(Some(endpoint.into()));
+    pub fn mainnet(mut self) -> Self {
+        self.s3_bucket_name = Some(Some("near-lake-data-mainnet".to_string()));
         self
     }
 
-    /// AWS S3 credentials
-    ///
-    /// By default AWS credentials will be taken from the file `~/.aws/credentials`. Howerver, you might have a use case when it is necessary to pass the credentials throught the CLI arguments. And here is the way to tell NEAR Lake Framework to use the credentials you've provided
+    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for testnet
     /// ```
     /// use near_lake_framework::LakeConfigBuilder;
+    ///
     /// # async fn main() {
-    /// let config = LakeConfigBuilder::default()
-    ///     .s3_bucket_name("near-lake-data-testnet")
-    ///     .start_block_height(82422587)
-    ///     .custom_credentials(
-    ///         "AKIAIOSFODNN7EXAMPLE",
-    ///         "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-    ///     )
-    ///     .build()
-    ///     .expect("Failed to build LakeConfig");
+    ///    let config = LakeConfigBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(82422587)
+    ///        .build()
+    ///        .expect("Failed to build LakeConfig");
     /// # }
     /// ```
-    pub fn custom_credentials(
-        &mut self,
-        access_key_id: impl Into<String>,
-        secret_access_key: impl Into<String>,
-    ) -> &mut Self {
-        self.s3_credentials = Some(Some(aws_types::Credentials::new(
-            access_key_id,
-            secret_access_key,
-            None,
-            None,
-            "custom_credentials",
-        )));
+    pub fn testnet(mut self) -> Self {
+        self.s3_bucket_name = Some(Some("near-lake-data-testnet".to_string()));
         self
     }
 }

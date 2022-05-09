@@ -8,10 +8,10 @@ async fn main() -> Result<(), tokio::io::Error> {
     init_tracing();
 
     let config = LakeConfigBuilder::default()
-        .s3_bucket_name("near-lake-data-testnet")
+        .testnet()
         .start_block_height(88220926)
         .build()
-        .expect("Failed to build Lakeconfig");
+        .expect("Failed to build LakeConfig");
 
     let stream = near_lake_framework::streamer(config);
 
