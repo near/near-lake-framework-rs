@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     .build();
 
   let config = LakeConfigBuilder::default()
-    .s3_conf(s3_conf)
+    .s3_config(s3_conf)
     .s3_bucket_name("near-lake-data-custom")
     .start_block_height(1)
     .build()
