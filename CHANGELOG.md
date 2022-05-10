@@ -35,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     .build()
     .expect("Failed to build LakeConfig");
   ```
-- New example (`printer`) is added to `examples` folder
 
 ### Breaking change
 
