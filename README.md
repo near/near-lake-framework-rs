@@ -1,5 +1,7 @@
 # near-lake-framework
 
+Available in programming languages: **Rust** | [Javascript](https://github.com/near/near-lake-framework-js)
+
 NEAR Lake Framework is a small library companion to [NEAR Lake](https://github.com/near/near-lake). It allows you to build
 your own indexer that subscribes to the stream of blocks from the NEAR Lake data source and create your own logic to process
 the NEAR Protocol data.
@@ -19,91 +21,59 @@ Greetings from the Data Platform Team! We are happy and proud to announce an MVP
 
 ```rust
 use futures::StreamExt;
-use near_lake_framework::LakeConfig;
+use near_lake_framework::LakeConfigBuilder;
 
 #[tokio::main]
 async fn main() -> Result<(), tokio::io::Error> {
-    // create a NEAR Lake Framework config
-    let config = LakeConfig {
-        s3_bucket_name: "near-lake-testnet".to_string(), // AWS S3 bucket name
-        s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
-        start_block_height: 82422587, // the latest block height we've got from explorer.near.org for testnet
-    };
+   // create a NEAR Lake Framework config
+   let config = LakeConfigBuilder::default()
+       .testnet()
+       .start_block_height(82422587)
+       .build()
+       .expect("Failed to build LakeConfig");
 
-    // instantiate the NEAR Lake Framework Stream
-    let stream = near_lake_framework::streamer(config);
+   // instantiate the NEAR Lake Framework Stream
+   let stream = near_lake_framework::streamer(config);
 
-    // read the stream events and pass them to a handler function with
-    // concurrency 1
-    let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
-        .map(|streamer_message| handle_streamer_message(streamer_message))
-        .buffer_unordered(1usize);
+   // read the stream events and pass them to a handler function with
+   // concurrency 1
+   let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
+       .map(|streamer_message| handle_streamer_message(streamer_message))
+       .buffer_unordered(1usize);
 
-    while let Some(_handle_message) = handlers.next().await {}
+   while let Some(_handle_message) = handlers.next().await {}
 
-    Ok(())
+   Ok(())
 }
 
 // The handler function to take the entire `StreamerMessage`
 // and print the block height and number of shards
 async fn handle_streamer_message(
-    streamer_message: near_lake_framework::near_indexer_primitives::StreamerMessage,
+   streamer_message: near_lake_framework::near_indexer_primitives::StreamerMessage,
 ) {
-    eprintln!(
-        "{} / shards {}",
-        streamer_message.block.header.height,
-        streamer_message.shards.len()
-    );
+   eprintln!(
+       "{} / shards {}",
+       streamer_message.block.header.height,
+       streamer_message.shards.len()
+   );
 }
 ```
 
-Video tutorial:
+For more information [refer to the docs](https://docs.rs/near-lake-framework)
 
-https://youtu.be/GsF7I93K-EQ
+### Tutorials
+
+- Video tutorial about [`near-examples/near-lake-accounts-watcher`](https://github.com/near-examples/near-lake-accounts-watcher) https://youtu.be/GsF7I93K-EQ
+- [Migrating to NEAR Lake Framework](https://near-indexers.io/tutorials/lake/migrating-to-near-lake-framework) from [NEAR Indexer Framework](https://near-indexers.io/docs/projects/near-indexer-framework)
 
 ### More examples
 
-- https://github.com/near-examples/near-lake-raw-printer simple example of a data printer built on top of NEAR Lake Framework
-- https://github.com/near-examples/near-lake-accounts-watcher another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
+- [`near-examples/near-lake-raw-printer`](https://github.com/near-examples/near-lake-raw-printer) simple example of a data printer built on top of NEAR Lake Framework
+- [`near-examples/near-lake-accounts-watcher`](https://github.com/near-examples/near-lake-accounts-watcher) another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
+- [`near-examples/indexer-tx-watcher-example-lake`](https://github.com/near-examples/indexer-tx-watcher-example-lake) an example of the indexer built on top of NEAR Lake Framework that watches for transactions related to specified account(s)
+- [`octopus-network/octopus-near-indexer-s3`](https://github.com/octopus-network/octopus-near-indexer-s3) a community-made project that uses NEAR Lake Framework
 
 ## How to use
-
-## Custom S3 storage
-
-In case you want to run your own [near-lake](https://github.com/near/near-lake) instance and store data in some S3 compatible storage ([Minio](https://min.io/) or [Localstack](https://localstack.cloud/) as example)
-You can owerride default S3 API endpoint by using `s3_endpoint` option
-
-- run minio
-
-```bash
-$ mkdir -p /data/near-lake-custom && minio server /data
-```
-
-- add `s3_endpoint` parameter to LakeConfig instance
-
-```bash
-let config = LakeConfig {
-    s3_endpoint: "http://0.0.0.0:9000".to_string(), // AWS S3 custom API endpoint
-    s3_bucket_name: "near-lake-custom".to_string(), // AWS S3 bucket name
-    s3_region_name: "eu-central-1".to_string(), // AWS S3 bucket region
-    start_block_height: 1, // the latest block height
-};
-```
-
-### AWS S3 Credentials
-
-In order to be able to get objects from the AWS S3 bucket you need to provide the AWS credentials.
-
-AWS default profile configuration with aws configure looks similar to the following:
-
-`~/.aws/credentials`
-```
-[default]
-aws_access_key_id=AKIAIOSFODNN7EXAMPLE
-aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-```
-
-[AWS docs: Configuration and credential file settings](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 
 ### Dependencies
 
@@ -118,19 +88,8 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = "0.2.0"
+near-lake-framework = "0.3.0"
 ```
-
-## Configuration
-
-Everything should be configured before the start of your indexer application via `LakeConfig` struct.
-
-Available parameters:
-
-* `s3_endpoint: String` - provide the AWS S3 custom API ednpoint
-* `s3_bucket_name: String` - provide the AWS S3 bucket name (`near-lake-testnet`, `near-lake-mainnet` or yours if you run your own NEAR Lake)
-* `s3_region_name: String` - provide the region for AWS S3 bucket
-* `start_block_height: u64` - block height to start the stream from
 
 ## Cost estimates
 
