@@ -138,7 +138,8 @@
 //! use near_lake_framework::LakeConfigBuilder;
 //!
 //! # async fn main() {
-//! let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+//! let aws_config = aws_config::from_env().load().await;
+//! let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config);
 //! s3_conf = s3_conf
 //!     .endpoint_resolver(
 //!             Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
@@ -249,8 +250,8 @@ async fn start(
     let s3_client = if let Some(config) = config.s3_config {
         Client::from_conf(config)
     } else {
-        let shared_config = aws_config::from_env().load().await;
-        let s3_config = aws_sdk_s3::config::Builder::from(&shared_config)
+        let aws_config = aws_config::from_env().load().await;
+        let s3_config = aws_sdk_s3::config::Builder::from(&aws_config)
             .region(aws_types::region::Region::new(config.s3_region_name))
             .build();
         Client::from_conf(s3_config)

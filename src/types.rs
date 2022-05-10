@@ -35,7 +35,8 @@ pub struct LakeConfig {
     /// use near_lake_framework::LakeConfigBuilder;
     ///
     /// # async fn main() {
-    ///     let mut s3_conf = aws_sdk_s3::config::Builder::from(&shared_config);
+    ///     let aws_config = aws_config::from_env().load().await;
+    ///     let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config);
     ///     s3_conf = s3_conf
     ///         .endpoint_resolver(
     ///             Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
