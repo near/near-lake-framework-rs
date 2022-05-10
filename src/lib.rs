@@ -145,7 +145,7 @@
 //!     .build();
 //!
 //! let config = LakeConfigBuilder::default()
-//!     .s3_conf(s3_conf)
+//!     .s3_config(s3_conf)
 //!     .s3_bucket_name("near-lake-data-custom")
 //!     .start_block_height(1)
 //!     .build()
@@ -159,9 +159,10 @@
 //!
 //! Available parameters:
 //!
-//!* [`start_block_height(value: u64)`](LakeConfigBuilder::start_block_height) - block height to start the stream from
-//!* *optional* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (you need to provide it if you use custom S3-compatible service, otherwise you can use [LakeConfigBuilder::mainnet] and [LakeConfigBuilder::testnet])
-//!* *optional* [`LakeConfigBuilder::s3_config(value: aws_sdk_s3::config::Config`](LakeConfigBuilder::s3_config) - provide custom AWS SDK S3 Config
+//! * [`start_block_height(value: u64)`](LakeConfigBuilder::start_block_height) - block height to start the stream from
+//! * *optional* [`s3_bucket_name(value: impl Into<String>)`](LakeConfigBuilder::s3_bucket_name) - provide the AWS S3 bucket name (you need to provide it if you use custom S3-compatible service, otherwise you can use [LakeConfigBuilder::mainnet] and [LakeConfigBuilder::testnet])
+//! * *optional* [`LakeConfigBuilder::s3_region_name(value: impl Into<String>)`](LakeConfigBuilder::s3_region_name) - provide the AWS S3 region name (if you need to set a custom one)
+//! * *optional* [`LakeConfigBuilder::s3_config(value: aws_sdk_s3::config::Config`](LakeConfigBuilder::s3_config) - provide custom AWS SDK S3 Config
 //!
 //! ## Cost estimates
 //!
@@ -244,16 +245,13 @@ async fn start(
     config: LakeConfig,
 ) {
     let mut start_from_block_height = config.start_block_height;
-    let s3_bucket_name = config
-        .s3_bucket_name
-        .expect("`s3_bucket_name` expected to be set by this time");
 
     let s3_client = if let Some(config) = config.s3_config {
         Client::from_conf(config)
     } else {
         let shared_config = aws_config::from_env().load().await;
         let s3_config = aws_sdk_s3::config::Builder::from(&shared_config)
-            .region(aws_types::region::Region::new("eu-central-1"))
+            .region(aws_types::region::Region::new(config.s3_region_name))
             .build();
         Client::from_conf(s3_config)
     };
@@ -263,7 +261,8 @@ async fn start(
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
         if let Ok(block_heights_prefixes) =
-            s3_fetchers::list_blocks(&s3_client, &s3_bucket_name, start_from_block_height).await
+            s3_fetchers::list_blocks(&s3_client, &config.s3_bucket_name, start_from_block_height)
+                .await
         {
             if block_heights_prefixes.is_empty() {
                 tracing::debug!(
@@ -284,7 +283,7 @@ async fn start(
                     .map(|block_height| {
                         s3_fetchers::fetch_streamer_message(
                             &s3_client,
-                            &s3_bucket_name,
+                            &config.s3_bucket_name,
                             *block_height,
                         )
                     })
@@ -317,7 +316,7 @@ async fn start(
             tracing::error!(
                 target: LAKE_FRAMEWORK,
                 "Failed to list objects from bucket {}. Retrying...",
-                &s3_bucket_name
+                &config.s3_bucket_name
             );
         }
     }

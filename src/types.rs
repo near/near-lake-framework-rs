@@ -19,8 +19,11 @@ pub type BlockHeight = u64;
 #[builder(pattern = "owned")]
 pub struct LakeConfig {
     /// AWS S3 Bucket name
-    #[builder(setter(into, strip_option))]
-    pub s3_bucket_name: Option<String>,
+    #[builder(setter(into))]
+    pub s3_bucket_name: String,
+    /// AWS S3 Region name
+    #[builder(setter(into))]
+    pub s3_region_name: String,
     /// Defines the block height to start indexing from
     pub start_block_height: u64,
     /// Custom aws_sdk_s3::config::Config
@@ -39,7 +42,7 @@ pub struct LakeConfig {
     ///         .build();
     ///
     ///     let config = LakeConfigBuilder::default()
-    ///         .s3_conf(s3_conf)
+    ///         .s3_config(s3_conf)
     ///         .s3_bucket_name("near-lake-data-custom")
     ///         .start_block_height(1)
     ///         .build()
@@ -64,7 +67,8 @@ impl LakeConfigBuilder {
     /// # }
     /// ```
     pub fn mainnet(mut self) -> Self {
-        self.s3_bucket_name = Some(Some("near-lake-data-mainnet".to_string()));
+        self.s3_bucket_name = Some("near-lake-data-mainnet".to_string());
+        self.s3_region_name = Some("eu-central-1".to_string());
         self
     }
 
@@ -81,7 +85,8 @@ impl LakeConfigBuilder {
     /// # }
     /// ```
     pub fn testnet(mut self) -> Self {
-        self.s3_bucket_name = Some(Some("near-lake-data-testnet".to_string()));
+        self.s3_bucket_name = Some("near-lake-data-testnet".to_string());
+        self.s3_region_name = Some("eu-central-1".to_string());
         self
     }
 }
