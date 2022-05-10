@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking change
 
-`LakeConfig` has a breaking change as we've added an optional field `s3_credentials`. Please, consider migrating to use `LakeConfigBuilder` instead of directly crafting the `Lakeconfig`
+`LakeConfig` has a breaking change as we've removed `s3_endpoint` and added `s3_config`. Please, consider migrating to use `LakeConfigBuilder` instead of directly crafting the `Lakeconfig`
 
 [0.3.0]: https://github.com/near/near-lake-framework/releases/tag/v0.3.0
 
