@@ -228,17 +228,21 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 ///        .build()
 ///        .expect("Failed to build LakeConfig");
 ///
-///     let stream = near_lake_framework::streamer(config);
+///     let (_, stream) = near_lake_framework::streamer(config);
 ///
 ///     while let Some(streamer_message) = stream.recv().await {
 ///         eprintln!("{:#?}", streamer_message);
 ///     }
 /// # }
 /// ```
-pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::StreamerMessage> {
+pub fn streamer(
+    config: LakeConfig,
+) -> (
+    tokio::task::JoinHandle<Result<(), anyhow::Error>>,
+    mpsc::Receiver<near_indexer_primitives::StreamerMessage>,
+) {
     let (sender, receiver) = mpsc::channel(100);
-    tokio::spawn(start(sender, config));
-    receiver
+    (tokio::spawn(start(sender, config)), receiver)
 }
 
 async fn start(

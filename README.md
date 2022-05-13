@@ -33,7 +33,7 @@ async fn main() -> Result<(), tokio::io::Error> {
        .expect("Failed to build LakeConfig");
 
    // instantiate the NEAR Lake Framework Stream
-   let stream = near_lake_framework::streamer(config);
+   let (_, stream) = near_lake_framework::streamer(config);
 
    // read the stream events and pass them to a handler function with
    // concurrency 1
