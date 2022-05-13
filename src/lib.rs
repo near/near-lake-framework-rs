@@ -244,7 +244,7 @@ pub fn streamer(config: LakeConfig) -> mpsc::Receiver<near_indexer_primitives::S
 async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: LakeConfig,
-) {
+) -> anyhow::Result<()> {
     let mut start_from_block_height = config.start_block_height;
 
     let s3_client = if let Some(config) = config.s3_config {
@@ -291,8 +291,7 @@ async fn start(
                         .collect();
 
                 while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-                    let streamer_message = streamer_message_result
-                        .expect("Failed to unwrap StreamerMessage from Result");
+                    let streamer_message = streamer_message_result?;
                     // check if we have `last_processed_block_hash` (might be None only on start)
                     if let Some(prev_block_hash) = last_processed_block_hash {
                         // compare last_processed_block_hash` with `block.header.prev_hash` of the current
@@ -311,7 +310,7 @@ async fn start(
                     last_processed_block_hash = Some(streamer_message.block.header.hash);
                     // update start_after key
                     start_from_block_height = streamer_message.block.header.height + 1;
-                    streamer_message_sink.send(streamer_message).await.unwrap();
+                    streamer_message_sink.send(streamer_message).await?;
                 }
             }
             Err(err) => {
