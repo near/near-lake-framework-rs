@@ -205,6 +205,7 @@ extern crate derive_builder;
 
 use futures::stream::StreamExt;
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::error::SendError;
 
 pub use near_indexer_primitives;
 
@@ -314,7 +315,10 @@ async fn start(
                     last_processed_block_hash = Some(streamer_message.block.header.hash);
                     // update start_after key
                     start_from_block_height = streamer_message.block.header.height + 1;
-                    streamer_message_sink.send(streamer_message).await?;
+                    if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
+                        tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
+                        return Ok(());
+                    }
                 }
             }
             Err(err) => {
