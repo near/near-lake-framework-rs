@@ -33,7 +33,7 @@ async fn main() -> Result<(), tokio::io::Error> {
        .expect("Failed to build LakeConfig");
 
    // instantiate the NEAR Lake Framework Stream
-   let (_, stream) = near_lake_framework::streamer(config);
+   let (sender, stream) = near_lake_framework::streamer(config);
 
    // read the stream events and pass them to a handler function with
    // concurrency 1
@@ -42,8 +42,14 @@ async fn main() -> Result<(), tokio::io::Error> {
        .buffer_unordered(1usize);
 
    while let Some(_handle_message) = handlers.next().await {}
+   drop(handlers); // close the channel so the sender will stop
 
-   Ok(())
+   // propagate errors from the sender
+   match sender.await {
+       Ok(Ok(())) => Ok(()),
+       Ok(Err(e)) => Err(e),
+       Err(e) => Err(anyhow::Error::from(e)), // JoinError
+   }
 }
 
 // The handler function to take the entire `StreamerMessage`
