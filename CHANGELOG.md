@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-jsonrpc-client-rs/compare/v0.3.0...HEAD)
 
+- Remove calls to `.unwrap()` and `.expect()` within the stream sender that
+  could panic. Instead, a `Result` is returned from the sender task.
+
+### Breaking change
+
+- The `streamer()` function now returns a tuple, with the first element being a
+  `JoinHandle<Result<(), Error>>` that you can use to gracefully capture any
+  errors that occurred within the sender task. If you don't care about errors,
+  you can easily adapt to this change by changing:
+  ```rust
+  let receiver = near_lake_framework::streamer(settings);
+  ```
+  to this instead:
+  ```rust
+  let (_, receiver) = near_lake_framework::streamer(settings);
+  ```
+
 ## [0.3.0](https://github.com/near/near-lake-framework/compare/v0.2.0...v0.3.0) - 2022-06-10
 
 - Introduce `LakeConfigBuilder` for creating configs
