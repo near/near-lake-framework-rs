@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use aws_sdk_s3::Client;
 use futures::stream::StreamExt;
 
@@ -30,12 +32,12 @@ pub(crate) async fn list_blocks(
             .filter_map(|common_prefix| common_prefix.prefix)
             .collect::<Vec<String>>()
             .into_iter()
-            .map(|prefix_string| {
+            .filter_map(|prefix_string| {
                 prefix_string
                     .split('/')
                     .next()
-                    .map(|s| s.parse::<u64>().expect("Failed to parse u64 from prefix"))
-                    .expect("Failed to unwrap Option<u64>")
+                    .map(u64::from_str)
+                    .and_then(|num| num.ok())
             })
             .collect(),
     })
@@ -65,7 +67,7 @@ pub(crate) async fn fetch_streamer_message(
                 Err(err) => {
                     tracing::debug!(
                         target: crate::LAKE_FRAMEWORK,
-                        "Failed to get {}/block.json. Retrying immediately\n{:#?}",
+                        "Failed to get {:0>12}/block.json. Retrying immediately\n{:#?}",
                         block_height,
                         err
                     );
@@ -73,10 +75,9 @@ pub(crate) async fn fetch_streamer_message(
             }
         };
 
-        let body_bytes = response.body.collect().await.unwrap().into_bytes();
+        let body_bytes = response.body.collect().await?.into_bytes();
 
-        serde_json::from_slice::<near_indexer_primitives::views::BlockView>(body_bytes.as_ref())
-            .unwrap()
+        serde_json::from_slice::<near_indexer_primitives::views::BlockView>(body_bytes.as_ref())?
     };
 
     let shards: Vec<near_indexer_primitives::IndexerShard> = (0..block_view.chunks.len() as u64)
@@ -110,12 +111,40 @@ async fn fetch_shard_or_retry(
             .await
         {
             Ok(response) => {
-                let body_bytes = response.body.collect().await.unwrap().into_bytes();
+                let body_bytes = match response.body.collect().await {
+                    Ok(body) => body.into_bytes(),
+                    Err(err) => {
+                        tracing::debug!(
+                            target: crate::LAKE_FRAMEWORK,
+                            "Failed to read the {:0>12}/shard_{}.json. Retrying in 1s...\n {:#?}",
+                            block_height,
+                            shard_id,
+                            err,
+                        );
+                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                        continue;
+                    }
+                };
 
-                break serde_json::from_slice::<near_indexer_primitives::IndexerShard>(
-                    body_bytes.as_ref(),
-                )
-                .unwrap();
+                let indexer_shard = match serde_json::from_slice::<
+                    near_indexer_primitives::IndexerShard,
+                >(body_bytes.as_ref())
+                {
+                    Ok(indexer_shard) => indexer_shard,
+                    Err(err) => {
+                        tracing::debug!(
+                            target: crate::LAKE_FRAMEWORK,
+                            "Failed to parse the {:0>12}/shard_{}.json. Retrying in 1s...\n {:#?}",
+                            block_height,
+                            shard_id,
+                            err,
+                        );
+                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                        continue;
+                    }
+                };
+
+                break indexer_shard;
             }
             Err(err) => {
                 tracing::debug!(
