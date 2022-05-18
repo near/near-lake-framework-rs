@@ -17,7 +17,7 @@ pub(crate) async fn list_blocks(
     );
     let response = s3_client
         .list_objects_v2()
-        .max_keys(100)
+        .max_keys(crate::MAX_KEYS)
         .delimiter("/".to_string())
         .start_after(format!("{:0>12}", start_from_block_height))
         .request_payer(aws_sdk_s3::model::RequestPayer::Requester)

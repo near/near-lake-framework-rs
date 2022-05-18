@@ -216,6 +216,7 @@ mod s3_fetchers;
 pub(crate) mod types;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
+pub(crate) const MAX_KEYS: i32 = 200;
 
 /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
 /// ```
