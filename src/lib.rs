@@ -322,7 +322,7 @@ async fn start(
                 }
             }
             Err(err) => {
-                tracing::error!(
+                tracing::warn!(
                     target: LAKE_FRAMEWORK,
                     "Failed to list objects from bucket {}: {}. Retrying in 1s...",
                     &config.s3_bucket_name,
