@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-jsonrpc-client-rs/compare/v0.4.0...HEAD)
+## [Unreleased](https://github.com/near/near-jsonrpc-client-rs/compare/v0.4.1...HEAD)
 
-## [0.4.0](https://github.com/near/near-jsonrpc-client-rs/compare/v0.3.0...v0.4.0) - 2022-06-17
+## [0.4.1](https://github.com/near/near-jsonrpc-client-rs/compare/v0.4.0...v0.4.1) - 2022-06-14
+
+- Extended the list of supported near-primitives versions from 0.12.0
+  to >=0.12.0,<0.15.0 to help downstream project avoid duplicate versions
+  of near-primitives and its dependencies.
+
+## [0.4.0](https://github.com/near/near-jsonrpc-client-rs/compare/v0.3.0...v0.4.0) - 2022-05-17
 
 - Remove calls to `.unwrap()` and `.expect()` within the stream sender that
   could panic. Instead, a `Result` is returned from the sender task.
@@ -27,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   let (_, receiver) = near_lake_framework::streamer(settings);
   ```
 
-## [0.3.0](https://github.com/near/near-lake-framework/compare/v0.2.0...v0.3.0) - 2022-06-10
+## [0.3.0](https://github.com/near/near-lake-framework/compare/v0.2.0...v0.3.0) - 2022-05-10
 
 - Introduce `LakeConfigBuilder` for creating configs
   ```rust
