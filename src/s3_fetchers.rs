@@ -3,12 +3,15 @@ use std::str::FromStr;
 use aws_sdk_s3::Client;
 use futures::stream::StreamExt;
 
+const ESTIMATED_SHARDS_COUNT: usize = 4;
+
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
 /// Returns the list of blocks that can be fetched
 pub(crate) async fn list_blocks(
     s3_client: &Client,
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
+    number_of_blocks_requested: usize,
 ) -> anyhow::Result<Vec<crate::types::BlockHeight>> {
     tracing::debug!(
         target: crate::LAKE_FRAMEWORK,
@@ -17,7 +20,7 @@ pub(crate) async fn list_blocks(
     );
     let response = s3_client
         .list_objects_v2()
-        .max_keys(100)
+        .max_keys((number_of_blocks_requested * (1 + ESTIMATED_SHARDS_COUNT)).try_into()?)
         .delimiter("/".to_string())
         .start_after(format!("{:0>12}", start_from_block_height))
         .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
