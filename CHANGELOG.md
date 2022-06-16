@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.4.1...HEAD)
 
+- Added the configuration option to control the size of the pool of
+  preloaded blocks `blocks_preload_pool_size` (100 remains to be the default)
+
+### Breaking change
+
+- Dropped the previously allowed way to instantiate LakeConfig by manually
+  initializing the public fields in favor of
+  [the builder pattern](https://docs.rs/near-lake-framework/0.4.1/near_lake_framework/struct.LakeConfigBuilder.html)
+
 ## [0.4.1](https://github.com/near/near-lake-framework/compare/v0.4.0...v0.4.1) - 2022-06-14
 
 - Bumped the minimum required version of `serde_json` to 1.0.75 to avoid
