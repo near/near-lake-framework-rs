@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up unused depdendencies
 - Added the configuration option to control the size of the pool of
   preloaded blocks `blocks_preload_pool_size` (100 remains to be the default)
+- Update AWS dependencies to `0.13.0`
 
 ### Breaking change
 

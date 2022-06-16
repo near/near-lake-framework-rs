@@ -16,9 +16,9 @@ version = "0.4.1"
 
 [dependencies]
 anyhow = "1.0.51"
-aws-config = "0.11.0"
-aws-types = "0.11.0"
-aws-sdk-s3 = "0.11.0"
+aws-config = "0.13.0"
+aws-types = "0.13.0"
+aws-sdk-s3 = "0.13.0"
 derive_builder = "0.11.2"
 futures = "0.3.5"
 serde = { version = "1", features = ["derive"] }
