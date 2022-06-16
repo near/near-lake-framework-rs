@@ -242,7 +242,7 @@ pub fn streamer(
     tokio::task::JoinHandle<Result<(), anyhow::Error>>,
     mpsc::Receiver<near_indexer_primitives::StreamerMessage>,
 ) {
-    let (sender, receiver) = mpsc::channel(100);
+    let (sender, receiver) = mpsc::channel(config.blocks_preload_pool_size);
     (tokio::spawn(start(sender, config)), receiver)
 }
 
@@ -266,8 +266,13 @@ async fn start(
 
     // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
-        match s3_fetchers::list_blocks(&s3_client, &config.s3_bucket_name, start_from_block_height)
-            .await
+        match s3_fetchers::list_blocks(
+            &s3_client,
+            &config.s3_bucket_name,
+            start_from_block_height,
+            config.blocks_preload_pool_size * 2,
+        )
+        .await
         {
             Ok(block_heights_prefixes) => {
                 if block_heights_prefixes.is_empty() {
@@ -283,17 +288,20 @@ async fn start(
                     "Received {} blocks from S3",
                     block_heights_prefixes.len()
                 );
-                let mut streamer_messages_futures: futures::stream::FuturesOrdered<_> =
-                    block_heights_prefixes
-                        .iter()
-                        .map(|block_height| {
-                            s3_fetchers::fetch_streamer_message(
+                let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
+                let mut pending_block_heights = block_heights_prefixes.into_iter();
+                for _ in 0..streamer_message_sink.capacity() {
+                    match pending_block_heights.next() {
+                        Some(block_height) => {
+                            streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
                                 &s3_client,
                                 &config.s3_bucket_name,
-                                *block_height,
-                            )
-                        })
-                        .collect();
+                                block_height,
+                            ));
+                        }
+                        None => break,
+                    }
+                }
 
                 while let Some(streamer_message_result) = streamer_messages_futures.next().await {
                     let streamer_message = streamer_message_result?;
@@ -315,6 +323,14 @@ async fn start(
                     last_processed_block_hash = Some(streamer_message.block.header.hash);
                     // update start_after key
                     start_from_block_height = streamer_message.block.header.height + 1;
+                    if let Some(pending_block_height) = pending_block_heights.next() {
+                        streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
+                            &s3_client,
+                            &config.s3_bucket_name,
+                            pending_block_height,
+                        ));
+                    }
+
                     if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
                         tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
                         return Ok(());
