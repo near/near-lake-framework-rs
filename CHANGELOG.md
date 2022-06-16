@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.4.1...HEAD)
 
+- Cleaned up unused depdendencies
+
 ## [0.4.1](https://github.com/near/near-lake-framework/compare/v0.4.0...v0.4.1) - 2022-06-14
 
 - Bumped the minimum required version of `serde_json` to 1.0.75 to avoid
