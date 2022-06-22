@@ -1,4 +1,4 @@
-# near-lake-framework
+# near-lake-framework-rs
 
 Available in programming languages: **Rust** | [Javascript](https://github.com/near/near-lake-framework-js)
 
