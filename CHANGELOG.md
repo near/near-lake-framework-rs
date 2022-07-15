@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.5.0...HEAD)
 
+- Avoid spiky latency with streaming block heights preload
 
 ## [0.5.0](https://github.com/near/near-lake-framework/compare/v0.4.1...v0.5.0) - 2022-06-16
 

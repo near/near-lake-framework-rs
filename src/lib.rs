@@ -246,6 +246,57 @@ pub fn streamer(
     (tokio::spawn(start(sender, config)), receiver)
 }
 
+fn stream_block_heights<'a: 'b, 'b>(
+    s3_client: &'a Client,
+    s3_bucket_name: &'a str,
+    mut start_from_block_height: crate::types::BlockHeight,
+    number_of_blocks_requested: usize,
+) -> impl futures::Stream<Item = u64> + 'b {
+    async_stream::stream! {
+        loop {
+            match s3_fetchers::list_blocks(
+                &s3_client,
+                &s3_bucket_name,
+                start_from_block_height,
+                number_of_blocks_requested
+            )
+            .await {
+                Ok(block_heights) => {
+                    if block_heights.is_empty() {
+                        tracing::debug!(
+                            target: LAKE_FRAMEWORK,
+                            "There are no newer block heights than {} in bucket {}. Fetching again in 2s...",
+                            start_from_block_height,
+                            s3_bucket_name,
+                        );
+                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                        continue;
+                    }
+                    tracing::debug!(
+                        target: LAKE_FRAMEWORK,
+                        "Received {} newer block heights",
+                        block_heights.len()
+                    );
+
+                    start_from_block_height = *block_heights.last().unwrap() + 1;
+                    for block_height in block_heights {
+                        yield block_height;
+                    }
+                }
+                Err(err) => {
+                    tracing::warn!(
+                        target: LAKE_FRAMEWORK,
+                        "Failed to get block heights from bucket {}: {}. Retrying in 1s...",
+                        s3_bucket_name,
+                        err,
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            }
+        }
+    }
+}
+
 async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: LakeConfig,
@@ -264,87 +315,63 @@ async fn start(
 
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
-    // Continuously get the list of block data from S3 and send them to the `streamer_message_sink`
     loop {
-        match s3_fetchers::list_blocks(
+        let pending_block_heights = stream_block_heights(
             &s3_client,
             &config.s3_bucket_name,
             start_from_block_height,
             config.blocks_preload_pool_size * 2,
-        )
-        .await
-        {
-            Ok(block_heights_prefixes) => {
-                if block_heights_prefixes.is_empty() {
-                    tracing::debug!(
-                        target: LAKE_FRAMEWORK,
-                        "No new blocks on S3, retry in 2s..."
-                    );
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    continue;
-                }
-                tracing::debug!(
-                    target: LAKE_FRAMEWORK,
-                    "Received {} blocks from S3",
-                    block_heights_prefixes.len()
-                );
-                let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
-                let mut pending_block_heights = block_heights_prefixes.into_iter();
-                for _ in 0..streamer_message_sink.capacity() {
-                    match pending_block_heights.next() {
-                        Some(block_height) => {
-                            streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
-                                &s3_client,
-                                &config.s3_bucket_name,
-                                block_height,
-                            ));
-                        }
-                        None => break,
-                    }
-                }
+        );
+        tokio::pin!(pending_block_heights);
 
-                while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-                    let streamer_message = streamer_message_result?;
-                    // check if we have `last_processed_block_hash` (might be None only on start)
-                    if let Some(prev_block_hash) = last_processed_block_hash {
-                        // compare last_processed_block_hash` with `block.header.prev_hash` of the current
-                        // block (ensure we don't miss anything from S3)
-                        // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
-                        if prev_block_hash != streamer_message.block.header.prev_hash {
-                            tracing::warn!(
-                                target: LAKE_FRAMEWORK,
-                                "`prev_hash` does not match, refetching the data from S3 in 200ms",
-                            );
-                            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                            break;
-                        }
-                    }
-                    // store current block hash as `last_processed_block_hash` for next iteration
-                    last_processed_block_hash = Some(streamer_message.block.header.hash);
-                    // update start_after key
-                    start_from_block_height = streamer_message.block.header.height + 1;
-                    if let Some(pending_block_height) = pending_block_heights.next() {
-                        streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
-                            &s3_client,
-                            &config.s3_bucket_name,
-                            pending_block_height,
-                        ));
-                    }
-
-                    if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
-                        tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
-                        return Ok(());
-                    }
+        let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
+        for _ in 0..config.blocks_preload_pool_size {
+            match pending_block_heights.next().await {
+                Some(block_height) => {
+                    streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
+                        &s3_client,
+                        &config.s3_bucket_name,
+                        block_height,
+                    ));
+                }
+                None => {
+                    return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
                 }
             }
-            Err(err) => {
-                tracing::warn!(
-                    target: LAKE_FRAMEWORK,
-                    "Failed to list objects from bucket {}: {}. Retrying in 1s...",
+        }
+
+        while let Some(streamer_message_result) = streamer_messages_futures.next().await {
+            let streamer_message = streamer_message_result?;
+            // check if we have `last_processed_block_hash` (might be None only on start)
+            if let Some(prev_block_hash) = last_processed_block_hash {
+                // compare last_processed_block_hash` with `block.header.prev_hash` of the current
+                // block (ensure we don't miss anything from S3)
+                // retrieve the data from S3 if prev_hashes don't match and repeat the main loop step
+                if prev_block_hash != streamer_message.block.header.prev_hash {
+                    tracing::warn!(
+                        target: LAKE_FRAMEWORK,
+                        "`prev_hash` does not match, refetching the data from S3 in 200ms",
+                    );
+                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    break;
+                }
+            }
+            // store current block info as `last_processed_block_*` for next iteration
+            last_processed_block_hash = Some(streamer_message.block.header.hash);
+            start_from_block_height = streamer_message.block.header.height + 1;
+            if let Some(pending_block_height) = pending_block_heights.next().await {
+                streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
+                    &s3_client,
                     &config.s3_bucket_name,
-                    err,
-                );
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    pending_block_height,
+                ));
+            } else {
+                return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+            }
+
+            if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
+                tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
+                return Ok(());
             }
         }
     }
