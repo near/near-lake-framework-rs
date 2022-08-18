@@ -328,7 +328,7 @@ async fn start(
         for _ in 0..config.blocks_preload_pool_size {
             match pending_block_heights.next().await {
                 Some(block_height) => {
-                    streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
+                    streamer_messages_futures.push_back(s3_fetchers::fetch_streamer_message(
                         &s3_client,
                         &config.s3_bucket_name,
                         block_height,
@@ -360,7 +360,7 @@ async fn start(
             last_processed_block_hash = Some(streamer_message.block.header.hash);
             start_from_block_height = streamer_message.block.header.height + 1;
             if let Some(pending_block_height) = pending_block_heights.next().await {
-                streamer_messages_futures.push(s3_fetchers::fetch_streamer_message(
+                streamer_messages_futures.push_back(s3_fetchers::fetch_streamer_message(
                     &s3_client,
                     &config.s3_bucket_name,
                     pending_block_height,
