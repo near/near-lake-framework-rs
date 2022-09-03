@@ -203,7 +203,8 @@ use aws_sdk_s3::Client;
 #[macro_use]
 extern crate derive_builder;
 
-use futures::stream::StreamExt;
+use futures::stream::{StreamExt as _};
+use tokio_stream::{Stream as _};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::SendError;
 
@@ -254,6 +255,7 @@ fn stream_block_heights<'a: 'b, 'b>(
 ) -> impl futures::Stream<Item = u64> + 'b {
     async_stream::stream! {
         loop {
+            tracing::warn!("awaiting list of blocks");
             match s3_fetchers::list_blocks(
                 &s3_client,
                 &s3_bucket_name,
@@ -280,6 +282,7 @@ fn stream_block_heights<'a: 'b, 'b>(
 
                     start_from_block_height = *block_heights.last().unwrap() + 1;
                     for block_height in block_heights {
+                        tracing::warn!("yield {} block height", block_height);
                         yield block_height;
                     }
                 }
@@ -326,21 +329,46 @@ async fn start(
 
         let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
         for _ in 0..config.blocks_preload_pool_size {
-            match pending_block_heights.next().await {
-                Some(block_height) => {
+            tracing::warn!("awaiting next block height (1)");
+            match futures::poll!(pending_block_heights.next()) {
+                std::task::Poll::Ready(Some(block_height)) => {
                     streamer_messages_futures.push_back(s3_fetchers::fetch_streamer_message(
                         &s3_client,
                         &config.s3_bucket_name,
                         block_height,
                     ));
                 }
-                None => {
+                std::task::Poll::Ready(None) => {
                     return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                }
+                std::task::Poll::Pending => {
+                    if streamer_messages_futures.is_empty() {
+                        match tokio_stream::StreamExt::next(&mut pending_block_heights).await {
+                            Some(block_height) => {
+                                streamer_messages_futures.push_back(
+                                    s3_fetchers::fetch_streamer_message(
+                                        &s3_client,
+                                        &config.s3_bucket_name,
+                                        block_height,
+                                    ),
+                                );
+                            }
+                            None => {
+                                return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                            }
+                        }
+                        continue;
+                    }
+                    // There are no more block heights at the moment, so we should not block here
+                    // and start processing the blocks.
+                    break;
                 }
             }
         }
 
-        while let Some(streamer_message_result) = streamer_messages_futures.next().await {
+        tracing::warn!("awaiting block (2)");
+        while let Some(streamer_message_result) = futures::StreamExt::next(&mut streamer_messages_futures).await {
+            tracing::warn!("received block (3)");
             let streamer_message = streamer_message_result?;
             // check if we have `last_processed_block_hash` (might be None only on start)
             if let Some(prev_block_hash) = last_processed_block_hash {
@@ -359,16 +387,47 @@ async fn start(
             // store current block info as `last_processed_block_*` for next iteration
             last_processed_block_hash = Some(streamer_message.block.header.hash);
             start_from_block_height = streamer_message.block.header.height + 1;
-            if let Some(pending_block_height) = pending_block_heights.next().await {
-                streamer_messages_futures.push_back(s3_fetchers::fetch_streamer_message(
-                    &s3_client,
-                    &config.s3_bucket_name,
-                    pending_block_height,
-                ));
-            } else {
-                return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+            tracing::warn!("awaiting next block height (4)");
+            let blocks_preload_pool_current_len = streamer_messages_futures.len();
+            for _ in blocks_preload_pool_current_len..config.blocks_preload_pool_size {
+                tracing::warn!("awaiting next block height (41)");
+                match futures::poll!(pending_block_heights.next()) {
+                    std::task::Poll::Ready(Some(block_height)) => {
+                        streamer_messages_futures.push_back(s3_fetchers::fetch_streamer_message(
+                            &s3_client,
+                            &config.s3_bucket_name,
+                            block_height,
+                        ));
+                    }
+                    std::task::Poll::Ready(None) => {
+                        return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                    }
+                    std::task::Poll::Pending => {
+                        if streamer_messages_futures.is_empty() {
+                            match tokio_stream::StreamExt::next(&mut pending_block_heights).await {
+                                Some(block_height) => {
+                                    streamer_messages_futures.push_back(
+                                        s3_fetchers::fetch_streamer_message(
+                                            &s3_client,
+                                            &config.s3_bucket_name,
+                                            block_height,
+                                        ),
+                                    );
+                                }
+                                None => {
+                                    return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                                }
+                            }
+                            continue;
+                        }
+                        // There are no more block heights at the moment, so we should not block here
+                        // and keep processing the blocks.
+                        break;
+                    }
+                }
             }
 
+            tracing::warn!("streaming block (5)");
             if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
                 tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
                 return Ok(());
