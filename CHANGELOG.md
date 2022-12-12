@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.5.1...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
+
+## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...0.6.0)
+
+- Upgrade underlying dependency `near-indexer-primitives` to versions between 0.15 and 0.16
+
+### Breaking change
+
+`near-indexer-primitives` reflects some breaking changes in the data types. Some of the fields that were previously
+a base64-encoded String that now became raw `Vec<u8>`:
+
+- `views::ActionView::FunctionCall.args`
+- `views::QueryResponseKind::ViewState`
+- `views::ExecutionStatusView::SuccessValue`
+
+**Refer to this [`nearcore` commit](https://github.com/near/nearcore/commit/8e9be9fff4d520993c81b0e3738c0f223a9538c0) to find all the changes of this kind.**
 
 ## [0.5.2](https://github.com/near/near-lake-framework/compare/v0.5.1...0.5.2)
 
