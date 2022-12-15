@@ -17,7 +17,7 @@ pub type BlockHeight = u64;
 /// ```
 #[derive(Default, Builder, Debug)]
 #[builder(pattern = "owned")]
-pub struct LakeConfig {
+pub struct Lake {
     /// AWS S3 Bucket name
     #[builder(setter(into))]
     pub(crate) s3_bucket_name: String,
@@ -56,7 +56,7 @@ pub struct LakeConfig {
     pub(crate) blocks_preload_pool_size: usize,
 }
 
-impl LakeConfigBuilder {
+impl LakeBuilder {
     /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for mainnet
     /// ```
     /// use near_lake_framework::LakeConfigBuilder;
