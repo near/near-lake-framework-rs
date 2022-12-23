@@ -6,6 +6,10 @@ use tokio::sync::mpsc::error::SendError;
 
 use near_lake_primitives::near_indexer_primitives;
 
+/// Creates [mpsc::Receiver<near_indexer_primitives::StreamerMessage>] and
+/// [mpsc::Sender<near_indexer_primitives::StreamerMessage>]spawns the streamer
+/// process that writes [near_idnexer_primitives::StreamerMessage] to the given `mpsc::channel`
+/// returns both `sender` and `receiver`
 pub(crate) fn streamer(
     config: crate::types::Lake,
 ) -> (
@@ -76,14 +80,21 @@ async fn fast_fetch_block_heights(
 ) -> anyhow::Result<Vec<u64>> {
     let mut block_heights = Vec::with_capacity(limit);
     for remaining_limit in (0..limit).rev() {
-        tracing::debug!(target: crate::LAKE_FRAMEWORK, "Polling for the next block height without awaiting... (up to {} block heights are going to be fetched)", remaining_limit);
+        tracing::debug!(
+            target: crate::LAKE_FRAMEWORK,
+            "Polling for the next block height without awaiting... (up to {} block heights are going to be fetched)",
+            remaining_limit
+        );
         match futures::poll!(pending_block_heights.next()) {
             std::task::Poll::Ready(Some(block_height)) => {
                 block_heights.push(block_height);
             }
             std::task::Poll::Pending => {
                 if await_for_at_least_one && block_heights.is_empty() {
-                    tracing::debug!(target: crate::LAKE_FRAMEWORK, "There were no block heights available immediately, and the prefetching blocks queue is empty, so we need to await for at least a single block height to be available before proceeding...");
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "There were no block heights available immediately, and the prefetching blocks queue is empty, so we need to await for at least a single block height to be available before proceeding..."
+                    );
                     match pending_block_heights.next().await {
                         Some(block_height) => {
                             block_heights.push(block_height);
@@ -94,7 +105,10 @@ async fn fast_fetch_block_heights(
                     }
                     continue;
                 }
-                tracing::debug!(target: crate::LAKE_FRAMEWORK, "There were no block heights available immediately, so we should not block here and keep processing the blocks.");
+                tracing::debug!(
+                    target: crate::LAKE_FRAMEWORK,
+                    "There were no block heights available immediately, so we should not block here and keep processing the blocks."
+                );
                 break;
             }
             std::task::Poll::Ready(None) => {

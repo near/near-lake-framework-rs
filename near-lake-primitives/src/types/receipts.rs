@@ -6,22 +6,24 @@ use near_crypto::PublicKey;
 use near_primitives_core::serialize::{base64_format, dec_format};
 
 #[derive(Debug, Clone)]
-pub struct ExecutedReceipt {
+pub struct Receipt {
+    pub receipt_kind: ReceiptKind,
     pub receipt_id: CryptoHash,
     pub receiver_id: AccountId,
     pub predecessor_id: AccountId,
     pub status: ExecutionStatus,
-    pub execution_outcome_id: CryptoHash,
+    pub execution_outcome_id: Option<CryptoHash>,
     pub logs: Vec<String>,
 }
 
-impl From<&IndexerExecutionOutcomeWithReceipt> for ExecutedReceipt {
+impl From<&IndexerExecutionOutcomeWithReceipt> for Receipt {
     fn from(outcome_with_receipt: &IndexerExecutionOutcomeWithReceipt) -> Self {
         Self {
+            receipt_kind: (&outcome_with_receipt.receipt.receipt).into(),
             receipt_id: outcome_with_receipt.receipt.receipt_id,
             receiver_id: outcome_with_receipt.receipt.receiver_id.clone(),
             predecessor_id: outcome_with_receipt.receipt.predecessor_id.clone(),
-            execution_outcome_id: outcome_with_receipt.execution_outcome.id,
+            execution_outcome_id: Some(outcome_with_receipt.execution_outcome.id),
             logs: outcome_with_receipt
                 .execution_outcome
                 .outcome
@@ -34,18 +36,47 @@ impl From<&IndexerExecutionOutcomeWithReceipt> for ExecutedReceipt {
     }
 }
 
+impl From<&views::ReceiptView> for Receipt {
+    fn from(receipt: &views::ReceiptView) -> Self {
+        Self {
+            receipt_kind: (&receipt.receipt).into(),
+            receipt_id: receipt.receipt_id,
+            receiver_id: receipt.receiver_id.clone(),
+            predecessor_id: receipt.predecessor_id.clone(),
+            status: ExecutionStatus::Postponed,
+            execution_outcome_id: None,
+            logs: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ReceiptKind {
+    Action,
+    Data,
+}
+
+impl From<&views::ReceiptEnumView> for ReceiptKind {
+    fn from(receipt_enum: &views::ReceiptEnumView) -> Self {
+        match receipt_enum {
+            views::ReceiptEnumView::Action { .. } => Self::Action,
+            views::ReceiptEnumView::Data { .. } => Self::Data,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ExecutionStatus {
     SuccessValue(Vec<u8>),
     SuccessReceiptId(CryptoHash),
     Failure(String),
-    Unknown,
+    Postponed,
 }
 
 impl From<&views::ExecutionStatusView> for ExecutionStatus {
     fn from(execution_status_view: &views::ExecutionStatusView) -> Self {
         match execution_status_view {
-            views::ExecutionStatusView::Unknown => Self::Unknown,
+            views::ExecutionStatusView::Unknown => Self::Postponed,
             views::ExecutionStatusView::SuccessValue(value) => Self::SuccessValue(value.clone()),
             views::ExecutionStatusView::SuccessReceiptId(receipt_id) => {
                 Self::SuccessReceiptId(*receipt_id)

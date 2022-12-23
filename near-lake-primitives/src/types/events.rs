@@ -1,4 +1,4 @@
-use super::receipts::ExecutedReceipt;
+use super::receipts::Receipt;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct Event {
@@ -21,11 +21,11 @@ impl Event {
     }
 }
 
-pub trait EventsTrait<ExecutedReceipt> {
+pub trait EventsTrait<Receipt> {
     fn events(&self) -> Vec<Event>;
 }
 
-impl EventsTrait<ExecutedReceipt> for ExecutedReceipt {
+impl EventsTrait<Receipt> for Receipt {
     fn events(&self) -> Vec<Event> {
         self.logs
             .iter()

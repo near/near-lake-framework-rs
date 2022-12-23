@@ -236,7 +236,7 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 impl types::Lake {
     pub fn run<Fut>(
         self,
-        f: impl Fn(near_lake_primitives::LakeContext) -> Fut,
+        f: impl Fn(near_lake_primitives::types::block::Block, near_lake_primitives::LakeContext) -> Fut,
     ) -> anyhow::Result<()>
     where
         Fut: Future<Output = anyhow::Result<()>>,
@@ -250,9 +250,9 @@ impl types::Lake {
             // concurrency 1
             let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
                 .map(|streamer_message| async {
-                    let context =
-                        near_lake_primitives::LakeContext::from_streamer_message(streamer_message);
-                    f(context).await
+                    let context = LakeContext {};
+                    let block: near_lake_primitives::types::block::Block = streamer_message.into();
+                    f(block, context).await
                 })
                 .buffer_unordered(1usize);
 
