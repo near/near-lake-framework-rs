@@ -6,8 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
+- Simpler start boilerplate, simpler structures to deal with!
 
+### Breaking changes
 
+This version introduces a different much simplified concept of Lake Framework usage. Thus it brings breaking changes.
+
+We introduce `near-lake-primitives` crate with simplified primitive structures (e.g `Block`, `Transaction`, `StateChange`, etc.) which is heavily used by Lake Framework since now.
+
+And some other changes:
+
+- `LakeConfig` is renamed to be just `Lake`. It is done because since this update `Lake` is accepting the **indexing function** from a user and runs the streamer implicitly. Thus shortening and simplifying the start boilerplate to something line this:
+  ```rust
+  fn main() -> anyhow::Result<()> {
+      // Lake Framework start boilerplate
+      near_lake_framework::LakeBuilder::default()
+          .mainnet()
+          .start_block_height(80504433)
+          .build()?
+          .run(handle_block) // user-defined asynchronous function that handles each block
+  }
+  ```
+
+  Please note your main function isn't required to be asynchronous anymore! It is not handled by Lake Framework under the hood.
 
 ## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...v0.6.0)
 
