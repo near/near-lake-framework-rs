@@ -5,38 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.2...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
+- Simpler start boilerplate, simpler structures to deal with!
 
-## [0.7.2](https://github.com/near/near-lake-framework/compare/v0.7.1...0.7.2)
+### Breaking changes
 
-- Upgrade near primitives crate to `0.17.0`
-- Upgrade `tokio` version to the latest (`1.28.2`)
+This version introduces a different much simplified concept of Lake Framework usage. Thus it brings breaking changes.
 
-## [0.7.1](https://github.com/near/near-lake-framework/compare/v0.7.0...0.7.1)
+We introduce `near-lake-primitives` crate with simplified primitive structures (e.g `Block`, `Transaction`, `StateChange`, etc.) which is heavily used by Lake Framework since now.
 
-- Refactor `s3_fetchers` to allow testing
-- Fix `betanet` default region (the corresponding bucket is in different region)
+And some other changes:
 
-## [0.7.0](https://github.com/near/near-lake-framework/compare/v0.6.1...0.7.0)
+- `LakeConfig` is renamed to be just `Lake`. It is done because since this update `Lake` is accepting the **indexing function** from a user and runs the streamer implicitly. Thus shortening and simplifying the start boilerplate to something line this:
+  ```rust
+  fn main() -> anyhow::Result<()> {
+      // Lake Framework start boilerplate
+      near_lake_framework::LakeBuilder::default()
+          .mainnet()
+          .start_block_height(80504433)
+          .build()?
+          .run(handle_block) // user-defined asynchronous function that handles each block
+  }
+  ```
 
-- Add support for Meta Transactions [NEP-366](https://github.com/near/NEPs/blob/master/neps/nep-0366.md) by upgrading `near-indexer-primitives` to `0.16`
-- Add helper function for connecting to `betanet` lake
+  Please note your main function isn't required to be asynchronous anymore! It is not handled by Lake Framework under the hood.
 
-### Breaking change
-
-- `Delegate` action has been introduced in `near-primitives::views::ActionView`, this should be handled everywhere you are handling `ActionView`
-
-## [0.6.1](https://github.com/near/near-lake-framework/compare/v0.6.0...0.6.1)
-
-- Fix of possible silent stops of the streamer (firing logs and returning errors where necessary)
-- Fix the issue the streamer was always 1 block behind
-- Renamed a few internal methods to reflect what they do
-- Added debug and error logs in a few places
-- Introduced a `LakeError` enum using `thiserror` (#42), but not exposing it yet to avoid breaking changes to the framework (for now, it will be done in `0.7.0`)
-- Added proper error handling in a few places
-- Updated the dependencies version of AWS crates
-
-## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...0.6.0)
+## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...v0.6.0)
 
 - Upgrade underlying dependency `near-indexer-primitives` to versions between 0.15 and 0.16
 
@@ -51,7 +45,7 @@ a base64-encoded String that now became raw `Vec<u8>`:
 
 **Refer to this [`nearcore` commit](https://github.com/near/nearcore/commit/8e9be9fff4d520993c81b0e3738c0f223a9538c0) to find all the changes of this kind.**
 
-## [0.5.2](https://github.com/near/near-lake-framework/compare/v0.5.1...0.5.2)
+## [0.5.2](https://github.com/near/near-lake-framework/compare/v0.5.1...v0.5.2)
 
 - Fixed the bug that caused a lag by 100 blocks that was introduced in 0.5.1
 

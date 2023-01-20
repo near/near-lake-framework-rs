@@ -117,10 +117,14 @@ pub(crate) async fn fetch_streamer_message(
     lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
+<<<<<<< HEAD:src/s3_fetchers.rs
 ) -> Result<
     near_indexer_primitives::StreamerMessage,
     crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
 > {
+=======
+) -> anyhow::Result<crate::near_indexer_primitives::StreamerMessage> {
+>>>>>>> 8bcd5c5 (feat: NEAR Lake Helper (high-level Lake Framework) (#51)):near-lake-framework/src/s3_fetchers.rs
     let block_view = {
         let body_bytes = loop {
             match lake_s3_client
@@ -151,10 +155,22 @@ pub(crate) async fn fetch_streamer_message(
             };
         };
 
+<<<<<<< HEAD:src/s3_fetchers.rs
         serde_json::from_slice::<near_indexer_primitives::views::BlockView>(body_bytes.as_ref())?
     };
 
     let fetch_shards_futures = (0..block_view.chunks.len() as u64)
+=======
+        let body_bytes = response.body.collect().await?.into_bytes();
+
+        serde_json::from_slice::<crate::near_indexer_primitives::views::BlockView>(
+            body_bytes.as_ref(),
+        )?
+    };
+
+    let shards: Vec<crate::near_indexer_primitives::IndexerShard> = (0..block_view.chunks.len()
+        as u64)
+>>>>>>> 8bcd5c5 (feat: NEAR Lake Helper (high-level Lake Framework) (#51)):near-lake-framework/src/s3_fetchers.rs
         .collect::<Vec<u64>>()
         .into_iter()
         .map(|shard_id| {
@@ -163,7 +179,7 @@ pub(crate) async fn fetch_streamer_message(
 
     let shards = futures::future::try_join_all(fetch_shards_futures).await?;
 
-    Ok(near_indexer_primitives::StreamerMessage {
+    Ok(crate::near_indexer_primitives::StreamerMessage {
         block: block_view,
         shards,
     })
@@ -175,6 +191,7 @@ async fn fetch_shard_or_retry(
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
     shard_id: u64,
+<<<<<<< HEAD:src/s3_fetchers.rs
 ) -> Result<
     near_indexer_primitives::IndexerShard,
     crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
@@ -185,6 +202,16 @@ async fn fetch_shard_or_retry(
                 s3_bucket_name,
                 &format!("{:0>12}/shard_{}.json", block_height, shard_id),
             )
+=======
+) -> crate::near_indexer_primitives::IndexerShard {
+    loop {
+        match s3_client
+            .get_object()
+            .bucket(s3_bucket_name)
+            .key(format!("{:0>12}/shard_{}.json", block_height, shard_id))
+            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
+            .send()
+>>>>>>> 8bcd5c5 (feat: NEAR Lake Helper (high-level Lake Framework) (#51)):near-lake-framework/src/s3_fetchers.rs
             .await
         {
             Ok(response) => {
@@ -203,7 +230,29 @@ async fn fetch_shard_or_retry(
                     }
                 };
 
+<<<<<<< HEAD:src/s3_fetchers.rs
                 break body_bytes;
+=======
+                let indexer_shard = match serde_json::from_slice::<
+                    crate::near_indexer_primitives::IndexerShard,
+                >(body_bytes.as_ref())
+                {
+                    Ok(indexer_shard) => indexer_shard,
+                    Err(err) => {
+                        tracing::debug!(
+                            target: crate::LAKE_FRAMEWORK,
+                            "Failed to parse the {:0>12}/shard_{}.json. Retrying in 1s...\n {:#?}",
+                            block_height,
+                            shard_id,
+                            err,
+                        );
+                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                        continue;
+                    }
+                };
+
+                break indexer_shard;
+>>>>>>> 8bcd5c5 (feat: NEAR Lake Helper (high-level Lake Framework) (#51)):near-lake-framework/src/s3_fetchers.rs
             }
             Err(err) => {
                 tracing::debug!(
