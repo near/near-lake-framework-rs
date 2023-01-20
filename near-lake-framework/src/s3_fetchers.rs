@@ -55,7 +55,7 @@ pub(crate) async fn fetch_streamer_message(
     s3_client: &Client,
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
-) -> anyhow::Result<near_indexer_primitives::StreamerMessage> {
+) -> anyhow::Result<crate::near_indexer_primitives::StreamerMessage> {
     let block_view = {
         let response = loop {
             match s3_client
@@ -80,10 +80,13 @@ pub(crate) async fn fetch_streamer_message(
 
         let body_bytes = response.body.collect().await?.into_bytes();
 
-        serde_json::from_slice::<near_indexer_primitives::views::BlockView>(body_bytes.as_ref())?
+        serde_json::from_slice::<crate::near_indexer_primitives::views::BlockView>(
+            body_bytes.as_ref(),
+        )?
     };
 
-    let shards: Vec<near_indexer_primitives::IndexerShard> = (0..block_view.chunks.len() as u64)
+    let shards: Vec<crate::near_indexer_primitives::IndexerShard> = (0..block_view.chunks.len()
+        as u64)
         .collect::<Vec<u64>>()
         .into_iter()
         .map(|shard_id| fetch_shard_or_retry(s3_client, s3_bucket_name, block_height, shard_id))
@@ -91,7 +94,7 @@ pub(crate) async fn fetch_streamer_message(
         .collect()
         .await;
 
-    Ok(near_indexer_primitives::StreamerMessage {
+    Ok(crate::near_indexer_primitives::StreamerMessage {
         block: block_view,
         shards,
     })
@@ -103,7 +106,7 @@ async fn fetch_shard_or_retry(
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
     shard_id: u64,
-) -> near_indexer_primitives::IndexerShard {
+) -> crate::near_indexer_primitives::IndexerShard {
     loop {
         match s3_client
             .get_object()
@@ -130,7 +133,7 @@ async fn fetch_shard_or_retry(
                 };
 
                 let indexer_shard = match serde_json::from_slice::<
-                    near_indexer_primitives::IndexerShard,
+                    crate::near_indexer_primitives::IndexerShard,
                 >(body_bytes.as_ref())
                 {
                     Ok(indexer_shard) => indexer_shard,

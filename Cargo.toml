@@ -1,31 +1,16 @@
-[package]
-name = "near-lake-framework"
-version = "0.0.0" # managed by cargo-workspaces, see below
+[workspace]
+members = [
+    "near-lake-framework",
+    "near-lake-primitives",
+]
+
+# cargo-workspaces
+[workspace.package]
+version = "0.6.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/near-lake-framework"
 description = "Library to connect to the NEAR Lake S3 and stream the data"
 categories = ["asynchronous", "api-bindings", "network-programming"]
 keywords = ["near", "near-lake", "near-indexer"]
 authors = ["Near Inc <hello@nearprotocol.com>"]
-edition = "2021"
-rust-version = "1.58.1"
-
-# cargo-workspaces
-[workspace.metadata.workspaces]
-version = "0.6.0"
-
-[dependencies]
-anyhow = "1.0.51"
-aws-config = "0.13.0"
-aws-types = "0.13.0"
-aws-sdk-s3 = "0.13.0"
-derive_builder = "0.11.2"
-futures = "0.3.23"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.75"
-tokio = { version = "1.1", features = ["sync", "time"] }
-tokio-stream = { version = "0.1" }
-tracing = "0.1.13"
-
-near-indexer-primitives = ">=0.15.0,<0.16.0"
-async-stream = "0.3.3"
+rust-version = "1.65.0"
