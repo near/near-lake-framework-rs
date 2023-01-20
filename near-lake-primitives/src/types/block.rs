@@ -22,6 +22,18 @@ impl Block {
         &self.streamer_message
     }
 
+    pub fn block_hash(&self) -> CryptoHash {
+        self.header().hash()
+    }
+
+    pub fn prev_block_hash(&self) -> CryptoHash {
+        self.header().prev_hash()
+    }
+
+    pub fn block_height(&self) -> u64 {
+        self.header().height()
+    }
+
     pub fn header(&self) -> BlockHeader {
         (&self.streamer_message).into()
     }
@@ -78,13 +90,16 @@ impl Block {
             .collect()
     }
 
-    pub fn events(&mut self) -> Vec<(super::ReceiptId, events::Event)> {
+    pub fn events(&mut self) -> Vec<events::Event> {
         self.receipts()
             .iter()
             .flat_map(|executed_receipt| {
-                executed_receipt.logs.iter().filter_map(|log| {
-                    if let Ok(event) = events::Event::from_log(log) {
-                        Some((executed_receipt.receipt_id, event))
+                executed_receipt.logs().into_iter().filter_map(|log| {
+                    if let Ok(event) = events::RawEvent::from_log(&log) {
+                        Some(events::Event {
+                            related_receipt_id: executed_receipt.receipt_id(),
+                            raw_event: event.clone(),
+                        })
                     } else {
                         None
                     }
@@ -126,6 +141,22 @@ impl Block {
             vec![]
         }
     }
+
+    pub fn events_by_account_id(&mut self, account_id: &crate::near_indexer_primitives::types::AccountId) -> Vec<events::Event> {
+        self
+            .events()
+            .iter()
+            .filter_map(|event| if let Some(action) = self.action_by_receipt_id(event.related_receipt_id()) {
+                if &action.receiver_id() == account_id || &action.signer_id() == account_id {
+                    Some(event.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            })
+            .collect()
+    }
 }
 
 impl Block {
@@ -133,7 +164,7 @@ impl Block {
         self.actions = self
             .actions()
             .iter()
-            .map(|action| (action.receipt_id, action.clone()))
+            .map(|action| (action.receipt_id(), action.clone()))
             .collect();
     }
 
@@ -141,7 +172,7 @@ impl Block {
         self.events = self
             .receipts()
             .iter()
-            .map(|receipt| (receipt.receipt_id, receipt.events()))
+            .map(|receipt| (receipt.receipt_id(), receipt.events()))
             .collect();
     }
 }
@@ -162,19 +193,73 @@ impl From<StreamerMessage> for Block {
 
 #[derive(Debug, Clone)]
 pub struct BlockHeader {
-    pub height: u64,
-    pub hash: CryptoHash,
-    pub prev_hash: CryptoHash,
-    pub author: AccountId,
-    pub timestamp_nanosec: u64,
-    pub epoch_id: CryptoHash,
-    pub next_epoch_id: CryptoHash,
-    pub gas_price: u128,
-    pub total_supply: u128,
-    pub latest_protocol_version: u32,
-    pub random_value: CryptoHash,
-    pub chunks_included: u64,
-    pub validator_proposals: Vec<views::validator_stake_view::ValidatorStakeView>,
+    height: u64,
+    hash: CryptoHash,
+    prev_hash: CryptoHash,
+    author: AccountId,
+    timestamp_nanosec: u64,
+    epoch_id: CryptoHash,
+    next_epoch_id: CryptoHash,
+    gas_price: u128,
+    total_supply: u128,
+    latest_protocol_version: u32,
+    random_value: CryptoHash,
+    chunks_included: u64,
+    validator_proposals: Vec<views::validator_stake_view::ValidatorStakeView>,
+}
+
+impl BlockHeader {
+    pub fn height(&self) -> u64 {
+        self.height
+    }
+
+    pub fn hash(&self) -> CryptoHash {
+        self.hash.clone()
+    }
+
+    pub fn prev_hash(&self) -> CryptoHash {
+        self.prev_hash.clone()
+    }
+
+    pub fn author(&self) -> AccountId {
+        self.author.clone()
+    }
+
+    pub fn timestamp_nanosec(&self) -> u64 {
+        self.timestamp_nanosec
+    }
+
+    pub fn epoch_id(&self) -> CryptoHash {
+        self.epoch_id.clone()
+    }
+
+    pub fn next_epoch_id(&self) -> CryptoHash {
+        self.next_epoch_id.clone()
+    }
+
+    pub fn gas_price(&self) -> u128 {
+        self.gas_price
+    }
+
+    pub fn total_supply(&self) -> u128 {
+        self.total_supply
+    }
+
+    pub fn latest_protocol_version(&self) -> u32 {
+        self.latest_protocol_version
+    }
+
+    pub fn random_value(&self) -> CryptoHash {
+        self.random_value.clone()
+    }
+
+    pub fn chunks_included(&self) -> u64 {
+        self.chunks_included
+    }
+
+    pub fn validator_proposals(&self) -> Vec<views::validator_stake_view::ValidatorStakeView> {
+        self.validator_proposals.clone()
+    }
 }
 
 impl From<&StreamerMessage> for BlockHeader {

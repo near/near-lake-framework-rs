@@ -7,13 +7,43 @@ use near_primitives_core::serialize::{base64_format, dec_format};
 
 #[derive(Debug, Clone)]
 pub struct Receipt {
-    pub receipt_kind: ReceiptKind,
-    pub receipt_id: CryptoHash,
-    pub receiver_id: AccountId,
-    pub predecessor_id: AccountId,
-    pub status: ExecutionStatus,
-    pub execution_outcome_id: Option<CryptoHash>,
-    pub logs: Vec<String>,
+    receipt_kind: ReceiptKind,
+    receipt_id: CryptoHash,
+    receiver_id: AccountId,
+    predecessor_id: AccountId,
+    status: ExecutionStatus,
+    execution_outcome_id: Option<CryptoHash>,
+    logs: Vec<String>,
+}
+
+impl Receipt {
+    pub fn receipt_kind(&self) -> ReceiptKind {
+        self.receipt_kind.clone()
+    }
+
+    pub fn receipt_id(&self) -> CryptoHash {
+        self.receipt_id.clone()
+    }
+
+    pub fn receiver_id(&self) -> AccountId {
+        self.receiver_id.clone()
+    }
+
+    pub fn predecessor_id(&self) -> AccountId {
+        self.predecessor_id.clone()
+    }
+
+    pub fn status(&self) -> ExecutionStatus {
+        self.status.clone()
+    }
+
+    pub fn execution_outcome_id(&self) -> Option<CryptoHash> {
+        self.execution_outcome_id.clone()
+    }
+
+    pub fn logs(&self) -> Vec<String> {
+        self.logs.clone()
+    }
 }
 
 impl From<&IndexerExecutionOutcomeWithReceipt> for Receipt {
@@ -88,14 +118,40 @@ impl From<&views::ExecutionStatusView> for ExecutionStatus {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Action {
-    pub receipt_id: CryptoHash,
-    pub predecessor_id: AccountId,
-    pub receiver_id: AccountId,
-    pub signer_id: AccountId,
-    pub signer_public_key: PublicKey,
-    pub operations: Vec<Operation>,
+    receipt_id: CryptoHash,
+    predecessor_id: AccountId,
+    receiver_id: AccountId,
+    signer_id: AccountId,
+    signer_public_key: PublicKey,
+    operations: Vec<Operation>,
+}
+
+impl Action {
+    pub fn receipt_id(&self) -> CryptoHash {
+        self.receipt_id.clone()
+    }
+
+    pub fn predecessor_id(&self) -> AccountId {
+        self.predecessor_id.clone()
+    }
+
+    pub fn receiver_id(&self) -> AccountId {
+        self.receiver_id.clone()
+    }
+
+    pub fn signer_id(&self) -> AccountId {
+        self.signer_id.clone()
+    }
+
+    pub fn signer_public_key(&self) -> PublicKey {
+        self.signer_public_key.clone()
+    }
+
+    pub fn operations(&self) -> Vec<Operation> {
+        self.operations.clone()
+    }
 }
 
 impl TryFrom<&views::ReceiptView> for Action {

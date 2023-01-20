@@ -5,14 +5,48 @@ use crate::near_indexer_primitives::{types::AccountId, CryptoHash, IndexerTransa
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
-    pub transaction_hash: CryptoHash,
-    pub signer_id: AccountId,
-    pub signer_public_key: PublicKey,
-    pub signature: Signature,
-    pub receiver_id: AccountId,
-    pub status: ExecutionStatus,
-    pub execution_outcome_id: CryptoHash,
-    pub operations: Vec<Operation>,
+    transaction_hash: CryptoHash,
+    signer_id: AccountId,
+    signer_public_key: PublicKey,
+    signature: Signature,
+    receiver_id: AccountId,
+    status: ExecutionStatus,
+    execution_outcome_id: CryptoHash,
+    operations: Vec<Operation>,
+}
+
+impl Transaction {
+    pub fn transaction_hash(&self) -> CryptoHash {
+        self.transaction_hash.clone()
+    }
+
+    pub fn signer_id(&self) -> AccountId {
+        self.signer_id.clone()
+    }
+
+    pub fn signer_public_key(&self) -> PublicKey {
+        self.signer_public_key.clone()
+    }
+
+    pub fn signature(&self) -> Signature {
+        self.signature.clone()
+    }
+
+    pub fn receiver_id(&self) -> AccountId {
+        self.receiver_id.clone()
+    }
+
+    pub fn status(&self) -> ExecutionStatus {
+        self.status.clone()
+    }
+
+    pub fn execution_outcome_id(&self) -> CryptoHash {
+        self.execution_outcome_id.clone()
+    }
+
+    pub fn operations(&self) -> Vec<Operation> {
+        self.operations.clone()
+    }
 }
 
 impl From<&IndexerTransactionWithOutcome> for Transaction {

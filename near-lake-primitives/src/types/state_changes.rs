@@ -11,9 +11,23 @@ use crate::near_indexer_primitives::{
 
 #[derive(Debug, Clone)]
 pub struct StateChange {
-    pub affected_account_id: AccountId,
-    pub cause: StateChangeCause,
-    pub value: StateChangeValue,
+    affected_account_id: AccountId,
+    cause: StateChangeCause,
+    value: StateChangeValue,
+}
+
+impl StateChange {
+    pub fn affected_account_id(&self) -> AccountId {
+        self.affected_account_id.clone()
+    }
+
+    pub fn cause(&self) -> StateChangeCause {
+        self.cause.clone()
+    }
+
+    pub fn value(&self) -> StateChangeValue {
+        self.value.clone()
+    }
 }
 
 impl From<&StateChangeWithCauseView> for StateChange {
@@ -79,7 +93,6 @@ impl From<&StateChangeCauseView> for StateChangeCause {
 pub enum StateChangeValue {
     AccountUpdate {
         account_id: AccountId,
-        // #[serde(flatten)]
         account: AccountView,
     },
     AccountDeletion {
@@ -96,19 +109,15 @@ pub enum StateChangeValue {
     },
     DataUpdate {
         account_id: AccountId,
-        // #[serde(rename = "key_base64", with = "base64_format")]
         key: Vec<u8>,
-        // #[serde(rename = "value_base64", with = "base64_format")]
         value: Vec<u8>,
     },
     DataDeletion {
         account_id: AccountId,
-        // #[serde(rename = "key_base64", with = "base64_format")]
         key: Vec<u8>,
     },
     ContractCodeUpdate {
         account_id: AccountId,
-        // #[serde(rename = "code_base64", with = "base64_format")]
         code: Vec<u8>,
     },
     ContractCodeDeletion {
