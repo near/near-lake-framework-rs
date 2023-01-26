@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
 
-- Refactor internal methods: drop redundant loop, rename some functions to reflect what they do, provide more logs and proper error handling
-- Introduce the `LakeError` structure for further drop of the `anyhow` (#42). **NB!** Not exposed yet to avoid introducing another breaking change. Used only internally for now.
+- Renamed a few internal methods to reflect what they do
+- Added debug and error logs in a few places
+- Introduced a `LakeError` enum using `thiserror` (#42), but not exposing it yet to avoid breaking changes to the framework (for now, it will be done in `0.7.0`)
+- Added proper error handling in a few places
+- Updated the dependencies version of AWS crates
 
 ## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...0.6.0)
 
