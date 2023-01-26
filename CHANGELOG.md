@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
 
+- Refactor internal methods: drop redundant loop, rename some functions to reflect what they do, provide more logs and proper error handling
+- Introduce the `LakeError` structure for further drop of the `anyhow` (#42). **NB!** Not exposed yet to avoid introducing another breaking change. Used only internally for now.
+
 ## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...0.6.0)
 
 - Upgrade underlying dependency `near-indexer-primitives` to versions between 0.15 and 0.16

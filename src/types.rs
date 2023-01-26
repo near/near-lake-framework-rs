@@ -93,3 +93,23 @@ impl LakeConfigBuilder {
         self
     }
 }
+
+#[allow(clippy::enum_variant_names)]
+#[derive(thiserror::Error, Debug)]
+pub enum LakeError<E> {
+    #[error("Failed to parse structure from JSON: {error_message}")]
+    ParseError {
+        #[from]
+        error_message: serde_json::Error,
+    },
+    #[error("AWS S3 error")]
+    AwsError {
+        #[from]
+        error: aws_sdk_s3::types::SdkError<E>,
+    },
+    #[error("Failed to convert integer")]
+    IntConversionError {
+        #[from]
+        error: std::num::TryFromIntError,
+    },
+}

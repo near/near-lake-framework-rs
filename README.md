@@ -94,7 +94,7 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = "0.3.0"
+near-lake-framework = "0.6.1"
 ```
 
 ## Cost estimates
@@ -129,4 +129,5 @@ The price depends on the number of shards
 We use Milestones with clearly defined acceptance criteria:
 
 * [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
+* [ ] [0.7 High-level update](https://github.com/near/near-lake-framework-rs/milestone/3)
 * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
