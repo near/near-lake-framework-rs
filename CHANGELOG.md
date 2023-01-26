@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
 
+- Fix of possible silent stops of the streamer (firing logs and returning errors where necessary)
+- Fix the issue the streamer was always 1 block behind
 - Renamed a few internal methods to reflect what they do
 - Added debug and error logs in a few places
 - Introduced a `LakeError` enum using `thiserror` (#42), but not exposing it yet to avoid breaking changes to the framework (for now, it will be done in `0.7.0`)
