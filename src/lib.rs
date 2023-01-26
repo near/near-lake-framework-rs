@@ -414,17 +414,15 @@ async fn start(
             "Awaiting for the first prefetched block..."
         );
         'stream: while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-            let streamer_message = match streamer_message_result {
-                Ok(res) => res,
-                Err(err) => {
-                    tracing::error!(
-                        target: LAKE_FRAMEWORK,
-                        "Failed to fetch StreamerMessage with error: \n{:#?}",
-                        err,
-                    );
-                    anyhow::bail!(err);
-                }
-            };
+            let streamer_message = streamer_message_result.map_err(|err| {
+                tracing::error!(
+                    target: LAKE_FRAMEWORK,
+                    "Failed to fetch StreamerMessage with error: \n{:#?}",
+                    err,
+                );
+                err
+            })?;
+
             tracing::debug!(
                 target: LAKE_FRAMEWORK,
                 "Received block #{} ({})",
@@ -492,7 +490,18 @@ async fn start(
                 return Ok(());
             }
 
-            streamer_messages_futures.extend(prefetch_res?.into_iter().map(|block_height| {
+            streamer_messages_futures.extend(
+                prefetch_res
+                    .map_err(|err| {
+                        tracing::error!(
+                            target: LAKE_FRAMEWORK,
+                            "Failed to prefetch block heights to the prefetching pool with error: \n{:#?}",
+                            err
+                        );
+                        err
+                    })?
+                    .into_iter()
+                    .map(|block_height| {
                 s3_fetchers::fetch_streamer_message(
                     &s3_client,
                     &config.s3_bucket_name,
