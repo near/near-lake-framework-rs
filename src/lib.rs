@@ -20,7 +20,7 @@
 //!        .expect("Failed to build LakeConfig");
 //!
 //!    // instantiate the NEAR Lake Framework Stream
-//!    let stream = near_lake_framework::streamer(config);
+//!    let (sender, stream) = near_lake_framework::streamer(config);
 //!
 //!    // read the stream events and pass them to a handler function with
 //!    // concurrency 1
@@ -29,8 +29,14 @@
 //!        .buffer_unordered(1usize);
 //!
 //!    while let Some(_handle_message) = handlers.next().await {}
+//!    drop(handlers); // close the channel so the sender will stop
 //!
-//!    Ok(())
+//!    // propagate errors from the sender
+//!    match sender.await {
+//!        Ok(Ok(())) => Ok(()),
+//!        Ok(Err(e)) => Err(e),
+//!        Err(e) => Err(anyhow::Error::from(e)), // JoinError
+//!    }
 //!}
 //!
 //! // The handler function to take the entire `StreamerMessage`
@@ -46,9 +52,10 @@
 //!}
 //!```
 //!
-//! ## Video tutorial:
+//! ## Tutorials:
 //!
-//! <https://youtu.be/GsF7I93K-EQ>
+//! - <https://youtu.be/GsF7I93K-EQ>
+//! - [Migrating to NEAR Lake Framework](https://near-indexers.io/tutorials/lake/migrating-to-near-lake-framework) from [NEAR Indexer Framework](https://near-indexers.io/docs/projects/near-indexer-framework)
 //!
 //! ### More examples
 //!
@@ -69,7 +76,7 @@
 //! use near_lake_framework::LakeConfigBuilder;
 //!
 //! # async fn main() {
-//! let credentials = aws_types::Credentials::new(
+//! let credentials = aws_credential_types::Credentials::new(
 //!     "AKIAIOSFODNN7EXAMPLE",
 //!     "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
 //!     None,
@@ -103,6 +110,16 @@
 //!
 //![AWS docs: Configuration and credential file settings](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 //!
+//! ### Environmental variables
+//!
+//! Alternatively, you can provide your AWS credentials via environment variables with constant names:
+//!
+//!```
+//!$ export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+//!$ AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+//!$ AWS_DEFAULT_REGION=eu-central-1
+//!```
+//!
 //!### Dependencies
 //!
 //!Add the following dependencies to your `Cargo.toml`
@@ -116,7 +133,7 @@
 //!tokio-stream = { version = "0.1" }
 //!
 //!# NEAR Lake Framework
-//!near-lake-framework = "0.3.0"
+//!near-lake-framework = "0.6.1"
 //!```
 //!
 //! ### Custom S3 storage
@@ -197,6 +214,7 @@
 //! We use Milestones with clearly defined acceptance criteria:
 //!
 //! * [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
+//! * [ ] [0.7 High-level update](https://github.com/near/near-lake-framework-rs/milestone/3)
 //! * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
 use aws_sdk_s3::Client;
 
@@ -209,7 +227,7 @@ use tokio::sync::mpsc::error::SendError;
 
 pub use near_indexer_primitives;
 
-pub use aws_types::Credentials;
+pub use aws_credential_types::Credentials;
 pub use types::{LakeConfig, LakeConfigBuilder};
 
 mod s3_fetchers;
@@ -250,16 +268,14 @@ fn stream_block_heights<'a: 'b, 'b>(
     s3_client: &'a Client,
     s3_bucket_name: &'a str,
     mut start_from_block_height: crate::types::BlockHeight,
-    number_of_blocks_requested: usize,
 ) -> impl futures::Stream<Item = u64> + 'b {
     async_stream::stream! {
         loop {
             tracing::debug!(target: LAKE_FRAMEWORK, "Fetching a list of blocks from S3...");
-            match s3_fetchers::list_blocks(
-                &s3_client,
-                &s3_bucket_name,
+            match s3_fetchers::list_block_heights(
+                s3_client,
+                s3_bucket_name,
                 start_from_block_height,
-                number_of_blocks_requested
             )
             .await {
                 Ok(block_heights) => {
@@ -299,11 +315,14 @@ fn stream_block_heights<'a: 'b, 'b>(
     }
 }
 
-async fn fast_fetch_block_heights(
-    pending_block_heights: &mut std::pin::Pin<&mut impl tokio_stream::Stream<Item = u64>>,
+// The only consumer of the BlockHeights Streamer
+async fn prefetch_block_heights_into_pool(
+    pending_block_heights: &mut std::pin::Pin<
+        &mut impl tokio_stream::Stream<Item = crate::types::BlockHeight>,
+    >,
     limit: usize,
     await_for_at_least_one: bool,
-) -> anyhow::Result<Vec<u64>> {
+) -> anyhow::Result<Vec<crate::types::BlockHeight>> {
     let mut block_heights = Vec::with_capacity(limit);
     for remaining_limit in (0..limit).rev() {
         tracing::debug!(target: LAKE_FRAMEWORK, "Polling for the next block height without awaiting... (up to {} block heights are going to be fetched)", remaining_limit);
@@ -335,6 +354,7 @@ async fn fast_fetch_block_heights(
     Ok(block_heights)
 }
 
+#[allow(unused_labels)] // we use loop labels for code-readability
 async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: LakeConfig,
@@ -353,13 +373,16 @@ async fn start(
 
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
-    loop {
-        let pending_block_heights = stream_block_heights(
-            &s3_client,
-            &config.s3_bucket_name,
-            start_from_block_height,
-            config.blocks_preload_pool_size * 2,
-        );
+    'main: loop {
+        // In the beginning of the 'main' loop we create a Block Heights stream
+        // and prefetch the initial data in that pool.
+        // Later the 'stream' loop might exit to this 'main' one to repeat the procedure.
+        // This happens because we assume Lake Indexer that writes to the S3 Bucket might
+        // in some cases, write N+1 block before it finishes writing the N block.
+        // We require to stream blocks consistently, so we need to try to load the block again.
+
+        let pending_block_heights =
+            stream_block_heights(&s3_client, &config.s3_bucket_name, start_from_block_height);
         tokio::pin!(pending_block_heights);
 
         let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
@@ -369,12 +392,11 @@ async fn start(
             config.blocks_preload_pool_size
         );
 
-        let is_blocks_preload_pool_empty = streamer_messages_futures.is_empty();
         streamer_messages_futures.extend(
-            fast_fetch_block_heights(
+            prefetch_block_heights_into_pool(
                 &mut pending_block_heights,
                 config.blocks_preload_pool_size,
-                is_blocks_preload_pool_empty,
+                true,
             )
             .await?
             .into_iter()
@@ -391,8 +413,16 @@ async fn start(
             target: LAKE_FRAMEWORK,
             "Awaiting for the first prefetched block..."
         );
-        while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-            let streamer_message = streamer_message_result?;
+        'stream: while let Some(streamer_message_result) = streamer_messages_futures.next().await {
+            let streamer_message = streamer_message_result.map_err(|err| {
+                tracing::error!(
+                    target: LAKE_FRAMEWORK,
+                    "Failed to fetch StreamerMessage with error: \n{:#?}",
+                    err,
+                );
+                err
+            })?;
+
             tracing::debug!(
                 target: LAKE_FRAMEWORK,
                 "Received block #{} ({})",
@@ -410,7 +440,7 @@ async fn start(
                         "`prev_hash` does not match, refetching the data from S3 in 200ms",
                     );
                     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                    break;
+                    break 'stream;
                 }
             }
 
@@ -424,37 +454,69 @@ async fn start(
                 config.blocks_preload_pool_size,
                 streamer_messages_futures.len(),
             );
-
-            let blocks_preload_pool_current_len = streamer_messages_futures.len();
-            streamer_messages_futures.extend(
-                fast_fetch_block_heights(
-                    &mut pending_block_heights,
-                    config
-                        .blocks_preload_pool_size
-                        .saturating_sub(blocks_preload_pool_current_len),
-                    blocks_preload_pool_current_len == 0,
-                )
-                .await?
-                .into_iter()
-                .map(|block_height| {
-                    s3_fetchers::fetch_streamer_message(
-                        &s3_client,
-                        &config.s3_bucket_name,
-                        block_height,
-                    )
-                }),
-            );
-
             tracing::debug!(
                 target: LAKE_FRAMEWORK,
                 "Streaming block #{} ({})",
                 streamer_message.block.header.height,
                 streamer_message.block.header.hash
             );
-            if let Err(SendError(_)) = streamer_message_sink.send(streamer_message).await {
-                tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
+            let blocks_preload_pool_current_len = streamer_messages_futures.len();
+
+            let prefetched_block_heights_future = prefetch_block_heights_into_pool(
+                &mut pending_block_heights,
+                config
+                    .blocks_preload_pool_size
+                    .saturating_sub(blocks_preload_pool_current_len),
+                blocks_preload_pool_current_len == 0,
+            );
+
+            let streamer_message_sink_send_future = streamer_message_sink.send(streamer_message);
+
+            let (prefetch_res, send_res): (
+                Result<Vec<types::BlockHeight>, anyhow::Error>,
+                Result<_, SendError<near_indexer_primitives::StreamerMessage>>,
+            ) = futures::join!(
+                prefetched_block_heights_future,
+                streamer_message_sink_send_future,
+            );
+
+            if let Err(SendError(err)) = send_res {
+                tracing::debug!(
+                    target: LAKE_FRAMEWORK,
+                    "Failed to send StreamerMessage (#{:0>12}) to the channel. Channel is closed, exiting \n{:?}",
+                    start_from_block_height - 1,
+                    err,
+                );
                 return Ok(());
             }
+
+            streamer_messages_futures.extend(
+                prefetch_res
+                    .map_err(|err| {
+                        tracing::error!(
+                            target: LAKE_FRAMEWORK,
+                            "Failed to prefetch block heights to the prefetching pool with error: \n{:#?}",
+                            err
+                        );
+                        err
+                    })?
+                    .into_iter()
+                    .map(|block_height| {
+                s3_fetchers::fetch_streamer_message(
+                    &s3_client,
+                    &config.s3_bucket_name,
+                    block_height,
+                )
+            }));
         }
+
+        tracing::warn!(
+            target: LAKE_FRAMEWORK,
+            "Exited from the 'stream' loop. It may happen in two cases:\n
+            1. Blocks has ended (impossible, might be an error on the Lake Buckets),\n
+            2. Received a Block which prev_hash doesn't match the previously streamed block.\n
+            Will attempt to restart the stream from block #{}",
+            start_from_block_height,
+        );
     }
 }
