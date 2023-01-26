@@ -2,15 +2,12 @@ use std::str::FromStr;
 
 use aws_sdk_s3::Client;
 
-const ESTIMATED_SHARDS_COUNT: usize = 4;
-
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
 /// Returns the list of block heights that can be fetched
 pub(crate) async fn list_block_heights(
     s3_client: &Client,
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
-    number_of_blocks_requested: usize,
 ) -> Result<
     Vec<crate::types::BlockHeight>,
     crate::types::LakeError<aws_sdk_s3::error::ListObjectsV2Error>,
@@ -22,10 +19,7 @@ pub(crate) async fn list_block_heights(
     );
     let response = s3_client
         .list_objects_v2()
-        .max_keys(std::cmp::min(
-            (number_of_blocks_requested * (1 + ESTIMATED_SHARDS_COUNT)).try_into()?,
-            1000i32,
-        ))
+        .max_keys(1000) // 1000 is the default and max value for this parameter
         .delimiter("/".to_string())
         .start_after(format!("{:0>12}", start_from_block_height))
         .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
@@ -124,7 +118,7 @@ async fn fetch_shard_or_retry(
     near_indexer_primitives::IndexerShard,
     crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
 > {
-    loop {
+    let body_bytes = loop {
         match s3_client
             .get_object()
             .bucket(s3_bucket_name)
@@ -149,9 +143,7 @@ async fn fetch_shard_or_retry(
                     }
                 };
 
-                break Ok(serde_json::from_slice::<
-                    near_indexer_primitives::IndexerShard,
-                >(body_bytes.as_ref())?);
+                break body_bytes;
             }
             Err(err) => {
                 tracing::debug!(
@@ -162,5 +154,9 @@ async fn fetch_shard_or_retry(
                 );
             }
         }
-    }
+    };
+
+    Ok(serde_json::from_slice::<
+        near_indexer_primitives::IndexerShard,
+    >(body_bytes.as_ref())?)
 }

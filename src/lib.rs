@@ -268,7 +268,6 @@ fn stream_block_heights<'a: 'b, 'b>(
     s3_client: &'a Client,
     s3_bucket_name: &'a str,
     mut start_from_block_height: crate::types::BlockHeight,
-    number_of_blocks_requested: usize,
 ) -> impl futures::Stream<Item = u64> + 'b {
     async_stream::stream! {
         loop {
@@ -277,7 +276,6 @@ fn stream_block_heights<'a: 'b, 'b>(
                 s3_client,
                 s3_bucket_name,
                 start_from_block_height,
-                number_of_blocks_requested
             )
             .await {
                 Ok(block_heights) => {
@@ -375,15 +373,16 @@ async fn start(
 
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
-    // main loop does the initial creation of Block Heights stream
-    // and prefetch the initial data in that pool
     'main: loop {
-        let pending_block_heights = stream_block_heights(
-            &s3_client,
-            &config.s3_bucket_name,
-            start_from_block_height,
-            config.blocks_preload_pool_size * 2,
-        );
+        // In the beginning of the 'main' loop we create a Block Heights stream
+        // and prefetch the initial data in that pool.
+        // Later the 'stream' loop might exit to this 'main' one to repeat the procedure.
+        // This happens because we assume Lake Indexer that writes to the S3 Bucket might
+        // in some cases, write N+1 block before it finishes writing the N block.
+        // We require to stream blocks consistently, so we need to try to load the block again.
+
+        let pending_block_heights =
+            stream_block_heights(&s3_client, &config.s3_bucket_name, start_from_block_height);
         tokio::pin!(pending_block_heights);
 
         let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
@@ -415,7 +414,6 @@ async fn start(
             "Awaiting for the first prefetched block..."
         );
         'stream: while let Some(streamer_message_result) = streamer_messages_futures.next().await {
-            // log the error and throw it
             let streamer_message = match streamer_message_result {
                 Ok(res) => res,
                 Err(err) => {
@@ -444,10 +442,7 @@ async fn start(
                         "`prev_hash` does not match, refetching the data from S3 in 200ms",
                     );
                     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                    // exit to 'main' loop as we got a newer block than expected
-                    // we will try to fetch blocks height after the last processed block
-                    // again (in case if Lake Indexer stored newer block earlier than expected)
-                    break;
+                    break 'stream;
                 }
             }
 
@@ -488,12 +483,12 @@ async fn start(
             );
 
             if let Err(SendError(err)) = send_res {
-                tracing::error!(
+                tracing::debug!(
                     target: LAKE_FRAMEWORK,
-                    "Failed to send StreamerMessage to the channel. \n{:?}",
+                    "Failed to send StreamerMessage (#{:0>12}) to the channel. Channel is closed, exiting \n{:?}",
+                    start_from_block_height - 1,
                     err,
                 );
-                tracing::debug!(target: LAKE_FRAMEWORK, "Channel closed, exiting");
                 return Ok(());
             }
 
