@@ -37,7 +37,6 @@
 //!        Ok(Err(e)) => Err(e),
 //!        Err(e) => Err(anyhow::Error::from(e)), // JoinError
 //!    }
-//!    Ok(())
 //!}
 //!
 //! // The handler function to take the entire `StreamerMessage`
