@@ -92,6 +92,24 @@ impl LakeConfigBuilder {
         self.s3_region_name = Some("eu-central-1".to_string());
         self
     }
+
+    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for betanet
+    /// ```
+    /// use near_lake_framework::LakeConfigBuilder;
+    ///
+    /// # async fn main() {
+    ///    let config = LakeConfigBuilder::default()
+    ///        .betanet()
+    ///        .start_block_height(82422587)
+    ///        .build()
+    ///        .expect("Failed to build LakeConfig");
+    /// # }
+    /// ```
+    pub fn betanet(mut self) -> Self {
+        self.s3_bucket_name = Some("near-lake-data-betanet".to_string());
+        self.s3_region_name = Some("eu-central-1".to_string());
+        self
+    }
 }
 
 #[allow(clippy::enum_variant_names)]

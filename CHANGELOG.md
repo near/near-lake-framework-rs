@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.1...HEAD)
 
 - Add support for Meta Transactions [NEP-366](https://github.com/near/NEPs/blob/master/neps/nep-0366.md) by upgrading `near-indexer-primitives` to `0.16`
+- Add helper function for connecting to `betanet` lake
 
 ### Breaking change
 
