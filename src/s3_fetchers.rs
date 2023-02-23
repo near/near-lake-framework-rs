@@ -4,7 +4,7 @@ use std::str::FromStr;
 use aws_sdk_s3::output::{GetObjectOutput, ListObjectsV2Output};
 
 #[async_trait]
-pub trait LakeS3Client {
+pub trait S3Client {
     async fn get_object(
         &self,
         bucket: &str,
@@ -22,18 +22,18 @@ pub trait LakeS3Client {
 }
 
 #[derive(Clone, Debug)]
-pub struct LakeClient {
+pub struct LakeS3Client {
     s3: aws_sdk_s3::Client,
 }
 
-impl LakeClient {
+impl LakeS3Client {
     pub fn new(s3: aws_sdk_s3::Client) -> Self {
         Self { s3 }
     }
 }
 
 #[async_trait]
-impl LakeS3Client for LakeClient {
+impl S3Client for LakeS3Client {
     async fn get_object(
         &self,
         bucket: &str,
@@ -74,7 +74,7 @@ impl LakeS3Client for LakeClient {
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
 /// Returns the list of block heights that can be fetched
 pub(crate) async fn list_block_heights(
-    lake_client_impl: &impl LakeS3Client,
+    lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
 ) -> Result<
@@ -86,7 +86,7 @@ pub(crate) async fn list_block_heights(
         "Fetching block heights from S3, after #{}...",
         start_from_block_height
     );
-    let response = lake_client_impl
+    let response = lake_s3_client
         .list_objects(s3_bucket_name, &format!("{:0>12}", start_from_block_height))
         .await?;
 
@@ -114,7 +114,7 @@ pub(crate) async fn list_block_heights(
 /// Reads the content of the objects and parses as a JSON.
 /// Returns the result in `near_indexer_primitives::StreamerMessage`
 pub(crate) async fn fetch_streamer_message(
-    lake_client_impl: &impl LakeS3Client,
+    lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
 ) -> Result<
@@ -123,7 +123,7 @@ pub(crate) async fn fetch_streamer_message(
 > {
     let block_view = {
         let body_bytes = loop {
-            match lake_client_impl
+            match lake_s3_client
                 .get_object(s3_bucket_name, &format!("{:0>12}/block.json", block_height))
                 .await
             {
@@ -158,7 +158,7 @@ pub(crate) async fn fetch_streamer_message(
         .collect::<Vec<u64>>()
         .into_iter()
         .map(|shard_id| {
-            fetch_shard_or_retry(lake_client_impl, s3_bucket_name, block_height, shard_id)
+            fetch_shard_or_retry(lake_s3_client, s3_bucket_name, block_height, shard_id)
         });
 
     let shards = futures::future::try_join_all(fetch_shards_futures).await?;
@@ -171,7 +171,7 @@ pub(crate) async fn fetch_streamer_message(
 
 /// Fetches the shard data JSON from AWS S3 and returns the `IndexerShard`
 async fn fetch_shard_or_retry(
-    lake_client_impl: &impl LakeS3Client,
+    lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
     shard_id: u64,
@@ -180,7 +180,7 @@ async fn fetch_shard_or_retry(
     crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
 > {
     let body_bytes = loop {
-        match lake_client_impl
+        match lake_s3_client
             .get_object(
                 s3_bucket_name,
                 &format!("{:0>12}/shard_{}.json", block_height, shard_id),
@@ -233,10 +233,10 @@ mod test {
     use aws_smithy_http::body::SdkBody;
 
     #[derive(Clone, Debug)]
-    pub struct LakeClient {}
+    pub struct LakeS3Client {}
 
     #[async_trait]
-    impl LakeS3Client for LakeClient {
+    impl S3Client for LakeS3Client {
         async fn get_object(
             &self,
             _bucket: &str,
@@ -263,7 +263,7 @@ mod test {
 
     #[tokio::test]
     async fn deserializes_meta_transactions() {
-        let lake_client = LakeClient {};
+        let lake_client = LakeS3Client {};
 
         let streamer_message =
             fetch_streamer_message(&lake_client, "near-lake-data-mainnet", 879765)
