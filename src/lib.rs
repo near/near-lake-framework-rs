@@ -230,6 +230,8 @@ pub use near_indexer_primitives;
 pub use aws_credential_types::Credentials;
 pub use types::{LakeConfig, LakeConfigBuilder};
 
+use s3_fetchers::LakeS3Client;
+
 mod s3_fetchers;
 pub(crate) mod types;
 
@@ -265,7 +267,7 @@ pub fn streamer(
 }
 
 fn stream_block_heights<'a: 'b, 'b>(
-    s3_client: &'a Client,
+    lake_s3_client: &'a LakeS3Client,
     s3_bucket_name: &'a str,
     mut start_from_block_height: crate::types::BlockHeight,
 ) -> impl futures::Stream<Item = u64> + 'b {
@@ -273,7 +275,7 @@ fn stream_block_heights<'a: 'b, 'b>(
         loop {
             tracing::debug!(target: LAKE_FRAMEWORK, "Fetching a list of blocks from S3...");
             match s3_fetchers::list_block_heights(
-                s3_client,
+                lake_s3_client,
                 s3_bucket_name,
                 start_from_block_height,
             )
@@ -370,6 +372,7 @@ async fn start(
             .build();
         Client::from_conf(s3_config)
     };
+    let lake_s3_client = s3_fetchers::LakeS3Client::new(s3_client.clone());
 
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;
 
@@ -381,8 +384,11 @@ async fn start(
         // in some cases, write N+1 block before it finishes writing the N block.
         // We require to stream blocks consistently, so we need to try to load the block again.
 
-        let pending_block_heights =
-            stream_block_heights(&s3_client, &config.s3_bucket_name, start_from_block_height);
+        let pending_block_heights = stream_block_heights(
+            &lake_s3_client,
+            &config.s3_bucket_name,
+            start_from_block_height,
+        );
         tokio::pin!(pending_block_heights);
 
         let mut streamer_messages_futures = futures::stream::FuturesOrdered::new();
@@ -402,7 +408,7 @@ async fn start(
             .into_iter()
             .map(|block_height| {
                 s3_fetchers::fetch_streamer_message(
-                    &s3_client,
+                    &lake_s3_client,
                     &config.s3_bucket_name,
                     block_height,
                 )
@@ -502,12 +508,13 @@ async fn start(
                     })?
                     .into_iter()
                     .map(|block_height| {
-                s3_fetchers::fetch_streamer_message(
-                    &s3_client,
-                    &config.s3_bucket_name,
-                    block_height,
-                )
-            }));
+                        s3_fetchers::fetch_streamer_message(
+                            &lake_s3_client,
+                            &config.s3_bucket_name,
+                            block_height,
+                        )
+                    }
+            ));
         }
 
         tracing::warn!(

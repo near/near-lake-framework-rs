@@ -53,6 +53,22 @@ jobs:
       run: |
         cargo clippy
 
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        components: clippy
+    - name: Run tests
+      run: |
+        cargo test
+
   publish:
     runs-on: ubuntu-20.04
     needs: [rustfmt, rustclippy]

@@ -20,6 +20,8 @@ aws-config = "0.53.0"
 aws-types = "0.53.0"
 aws-credential-types = "0.53.0"
 aws-sdk-s3 = "0.23.0"
+async-stream = "0.3.3"
+async-trait = "0.1.64"
 derive_builder = "0.11.2"
 futures = "0.3.23"
 serde = { version = "1", features = ["derive"] }
@@ -30,4 +32,9 @@ tokio-stream = { version = "0.1" }
 tracing = "0.1.13"
 
 near-indexer-primitives = ">=0.16.0,<0.17.0"
-async-stream = "0.3.3"
+
+[dev-dependencies]
+aws-smithy-http = "0.53.0"
+
+[lib]
+doctest = false
