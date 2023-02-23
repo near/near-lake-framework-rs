@@ -1,0 +1,239 @@
+{
+  "shard_id": 0,
+  "chunk": {
+    "author": "test.near",
+    "header": {
+      "chunk_hash": "7Ewp1AnL6o29UXLW2up9miQBdSaKxCnfRyhMGt9G4epN",
+      "prev_block_hash": "9Da84RTsubZPcLxzK1K6JkCnDnMn4DxaSRzJPtnYJXUM",
+      "outcome_root": "11111111111111111111111111111111",
+      "prev_state_root": "2ViDp7rmam77VmhY5C9KW92a6mgUTCKQ3Scz8tFyH13z",
+      "encoded_merkle_root": "44MrDjQzt1jU5PGUYY69THZ4g3SsfQiNiKKorey3GVtq",
+      "encoded_length": 364,
+      "height_created": 879765,
+      "height_included": 0,
+      "shard_id": 0,
+      "gas_used": 0,
+      "gas_limit": 1000000000000000,
+      "rent_paid": "0",
+      "validator_reward": "0",
+      "balance_burnt": "0",
+      "outgoing_receipts_root": "H4Rd6SGeEBTbxkitsCdzfu9xL9HtZ2eHoPCQXUeZ6bW4",
+      "tx_root": "GKd8Evs3JdahRpS8q14q6RzzkodzFiSQPcH4yJxs4ZjG",
+      "validator_proposals": [],
+      "signature": "ed25519:2qev3mWQdYLi9aPwCnFHt22GFxhuGTGfnaz3msGcduUdXeycTQDBkY4EyQzpph4frXCybuYHE6g4GFxD2HVmWbJY"
+    },
+    "transactions": [
+      {
+        "transaction": {
+          "signer_id": "test.near",
+          "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib",
+          "nonce": 39,
+          "receiver_id": "test.near",
+          "actions": [
+            {
+              "Delegate": {
+                "delegate_action": {
+                  "sender_id": "test.near",
+                  "receiver_id": "test.near",
+                  "actions": [
+                    {
+                      "AddKey": {
+                        "public_key": "ed25519:CnQMksXTTtn81WdDujsEMQgKUMkFvDJaAjDeDLTxVrsg",
+                        "access_key": {
+                          "nonce": 0,
+                          "permission": "FullAccess"
+                        }
+                      }
+                    }
+                  ],
+                  "nonce": 879546,
+                  "max_block_height": 100,
+                  "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib"
+                },
+                "signature": "ed25519:25uGrsJNU3fVgUpPad3rGJRy2XQum8gJxLRjKFCbd7gymXwUxQ9r3tuyBCD6To7SX5oSJ2ScJZejwqK1ju8WdZfS"
+              }
+            }
+          ],
+          "signature": "ed25519:3vKF31u2naSjow1uQEfkoWy834fu9xhk66oBfTAYL3XVtJVAf1FREt7owJzwyRrN5F4mtd1rkvv1iTPTL86Szb2j",
+          "hash": "EZnJpyJDnkwnadB1V8PqjVMx7oe2zLhUMtJ8v6EUh1NQ"
+        },
+        "outcome": {
+          "execution_outcome": {
+            "proof": [
+              {
+                "hash": "7kPZTTVYJHvUg4g3S7SFErkKs18Ex1kN4rESnZwtJb2U",
+                "direction": "Right"
+              }
+            ],
+            "block_hash": "95K8Je1iAVqieVU8ZuGgSdbvYs8T9rL6ER1XnRekMGbj",
+            "id": "EZnJpyJDnkwnadB1V8PqjVMx7oe2zLhUMtJ8v6EUh1NQ",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "AQDQ9G4QpK7x2inV3GieVEbqeoCGF9nmvrViQ2UgEXDQ"
+              ],
+              "gas_burnt": 409824625000,
+              "tokens_burnt": "40982462500000000000",
+              "executor_id": "test.near",
+              "status": {
+                "SuccessReceiptId": "AQDQ9G4QpK7x2inV3GieVEbqeoCGF9nmvrViQ2UgEXDQ"
+              },
+              "metadata": {
+                "version": 1,
+                "gas_profile": null
+              }
+            }
+          },
+          "receipt": null
+        }
+      }
+    ],
+    "receipts": [
+      {
+        "predecessor_id": "test.near",
+        "receiver_id": "test.near",
+        "receipt_id": "AQDQ9G4QpK7x2inV3GieVEbqeoCGF9nmvrViQ2UgEXDQ",
+        "receipt": {
+          "Action": {
+            "signer_id": "test.near",
+            "signer_public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib",
+            "gas_price": "100000000",
+            "output_data_receivers": [],
+            "input_data_ids": [],
+            "actions": [
+              {
+                "Delegate": {
+                  "delegate_action": {
+                    "sender_id": "test.near",
+                    "receiver_id": "test.near",
+                    "actions": [
+                      {
+                        "AddKey": {
+                          "public_key": "ed25519:CnQMksXTTtn81WdDujsEMQgKUMkFvDJaAjDeDLTxVrsg",
+                          "access_key": {
+                            "nonce": 0,
+                            "permission": "FullAccess"
+                          }
+                        }
+                      }
+                    ],
+                    "nonce": 879546,
+                    "max_block_height": 100,
+                    "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib"
+                  },
+                  "signature": "ed25519:25uGrsJNU3fVgUpPad3rGJRy2XQum8gJxLRjKFCbd7gymXwUxQ9r3tuyBCD6To7SX5oSJ2ScJZejwqK1ju8WdZfS"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "receipt_execution_outcomes": [
+    {
+      "execution_outcome": {
+        "proof": [
+          {
+            "hash": "6vBgNYcwx6pcESfrw5YRBRamatBH8red3GEt3s3ntefm",
+            "direction": "Left"
+          }
+        ],
+        "block_hash": "95K8Je1iAVqieVU8ZuGgSdbvYs8T9rL6ER1XnRekMGbj",
+        "id": "AQDQ9G4QpK7x2inV3GieVEbqeoCGF9nmvrViQ2UgEXDQ",
+        "outcome": {
+          "logs": [],
+          "receipt_ids": [
+            "5rc8UEhD4hmNQ3pJJM5Xc3VHeLXpCQqkA3ep8ag4aaDA"
+          ],
+          "gas_burnt": 308059500000,
+          "tokens_burnt": "30805950000000000000",
+          "executor_id": "test.near",
+          "status": {
+            "Failure": {
+              "ActionError": {
+                "index": 0,
+                "kind": "DelegateActionExpired"
+              }
+            }
+          },
+          "metadata": {
+            "version": 3,
+            "gas_profile": []
+          }
+        }
+      },
+      "receipt": {
+        "predecessor_id": "test.near",
+        "receiver_id": "test.near",
+        "receipt_id": "AQDQ9G4QpK7x2inV3GieVEbqeoCGF9nmvrViQ2UgEXDQ",
+        "receipt": {
+          "Action": {
+            "signer_id": "test.near",
+            "signer_public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib",
+            "gas_price": "100000000",
+            "output_data_receivers": [],
+            "input_data_ids": [],
+            "actions": [
+              {
+                "Delegate": {
+                  "delegate_action": {
+                    "sender_id": "test.near",
+                    "receiver_id": "test.near",
+                    "actions": [
+                      {
+                        "AddKey": {
+                          "public_key": "ed25519:CnQMksXTTtn81WdDujsEMQgKUMkFvDJaAjDeDLTxVrsg",
+                          "access_key": {
+                            "nonce": 0,
+                            "permission": "FullAccess"
+                          }
+                        }
+                      }
+                    ],
+                    "nonce": 879546,
+                    "max_block_height": 100,
+                    "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib"
+                  },
+                  "signature": "ed25519:25uGrsJNU3fVgUpPad3rGJRy2XQum8gJxLRjKFCbd7gymXwUxQ9r3tuyBCD6To7SX5oSJ2ScJZejwqK1ju8WdZfS"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "state_changes": [
+    {
+      "cause": {
+        "type": "transaction_processing",
+        "tx_hash": "EZnJpyJDnkwnadB1V8PqjVMx7oe2zLhUMtJ8v6EUh1NQ"
+      },
+      "type": "account_update",
+      "change": {
+        "account_id": "test.near",
+        "amount": "999999549946933447300000000000000",
+        "locked": "81773107345435833494396250588347",
+        "code_hash": "11111111111111111111111111111111",
+        "storage_usage": 182,
+        "storage_paid_at": 0
+      }
+    },
+    {
+      "cause": {
+        "type": "transaction_processing",
+        "tx_hash": "EZnJpyJDnkwnadB1V8PqjVMx7oe2zLhUMtJ8v6EUh1NQ"
+      },
+      "type": "access_key_update",
+      "change": {
+        "account_id": "test.near",
+        "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib",
+        "access_key": {
+          "nonce": 39,
+          "permission": "FullAccess"
+        }
+      }
+    }
+  ]
+}

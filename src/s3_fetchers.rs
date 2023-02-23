@@ -220,3 +220,89 @@ async fn fetch_shard_or_retry(
         near_indexer_primitives::IndexerShard,
     >(body_bytes.as_ref())?)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use async_trait::async_trait;
+
+    use aws_sdk_s3::output::{get_object_output, list_objects_v2_output};
+    use aws_sdk_s3::types::ByteStream;
+
+    use aws_smithy_http::body::SdkBody;
+
+    #[derive(Clone, Debug)]
+    pub struct LakeClient {}
+
+    #[async_trait]
+    impl LakeS3Client for LakeClient {
+        async fn get_object(
+            &self,
+            _bucket: &str,
+            prefix: &str,
+        ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>
+        {
+            let path = format!("{}/blocks/{}", env!("CARGO_MANIFEST_DIR"), prefix);
+            let file_bytes = tokio::fs::read(path).await.unwrap();
+            let stream = ByteStream::new(SdkBody::from(file_bytes));
+            Ok(get_object_output::Builder::default().body(stream).build())
+        }
+
+        async fn list_objects(
+            &self,
+            _bucket: &str,
+            _start_after: &str,
+        ) -> Result<
+            ListObjectsV2Output,
+            aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+        > {
+            Ok(list_objects_v2_output::Builder::default().build())
+        }
+    }
+
+    #[tokio::test]
+    async fn deserializes_meta_transactions() {
+        let lake_client = LakeClient {};
+
+        let streamer_message =
+            fetch_streamer_message(&lake_client, "near-lake-data-mainnet", 879765)
+                .await
+                .unwrap();
+
+        let delegate_action = &streamer_message.shards[0]
+            .chunk
+            .as_ref()
+            .unwrap()
+            .transactions[0]
+            .transaction
+            .actions[0];
+
+        assert_eq!(
+            serde_json::to_value(delegate_action).unwrap(),
+            serde_json::json!({
+                "Delegate": {
+                    "delegate_action": {
+                        "sender_id": "test.near",
+                        "receiver_id": "test.near",
+                        "actions": [
+                          {
+                            "AddKey": {
+                              "public_key": "ed25519:CnQMksXTTtn81WdDujsEMQgKUMkFvDJaAjDeDLTxVrsg",
+                              "access_key": {
+                                "nonce": 0,
+                                "permission": "FullAccess"
+                              }
+                            }
+                          }
+                        ],
+                        "nonce": 879546,
+                        "max_block_height": 100,
+                        "public_key": "ed25519:8Rn4FJeeRYcrLbcrAQNFVgvbZ2FCEQjgydbXwqBwF1ib"
+                    },
+                    "signature": "ed25519:25uGrsJNU3fVgUpPad3rGJRy2XQum8gJxLRjKFCbd7gymXwUxQ9r3tuyBCD6To7SX5oSJ2ScJZejwqK1ju8WdZfS"
+                }
+            })
+        );
+    }
+}
