@@ -35,3 +35,6 @@ near-indexer-primitives = ">=0.16.0,<0.17.0"
 
 [dev-dependencies]
 aws-smithy-http = "0.53.0"
+
+[lib]
+doctest = false
