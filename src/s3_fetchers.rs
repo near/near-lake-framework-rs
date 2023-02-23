@@ -1,6 +1,26 @@
+use async_trait::async_trait;
 use std::str::FromStr;
 
 use aws_sdk_s3::Client;
+use aws_sdk_s3::output::{GetObjectOutput, ListObjectsV2Output};
+
+#[async_trait]
+pub trait LakeS3Client {
+    async fn get_object(
+        &self,
+        bucket: &str,
+        prefix: &str,
+    ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>;
+
+    async fn list_objects(
+        &self,
+        bucket: &str,
+        start_after: &str,
+    ) -> Result<
+        ListObjectsV2Output,
+        aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+    >;
+}
 
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
 /// Returns the list of block heights that can be fetched
