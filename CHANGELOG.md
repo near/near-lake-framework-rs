@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.0...HEAD)
 
 - Refactor `s3_fetchers` to allow testing
+- Fix `betanet` default region (the corresponding bucket is in different region)
 
 ## [0.7.0](https://github.com/near/near-lake-framework/compare/v0.6.1...0.7.0)
 

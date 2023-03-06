@@ -107,7 +107,7 @@ impl LakeConfigBuilder {
     /// ```
     pub fn betanet(mut self) -> Self {
         self.s3_bucket_name = Some("near-lake-data-betanet".to_string());
-        self.s3_region_name = Some("eu-central-1".to_string());
+        self.s3_region_name = Some("us-east-1".to_string());
         self
     }
 }
