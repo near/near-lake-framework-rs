@@ -182,30 +182,50 @@
 //! * *optional* [`LakeConfigBuilder::s3_region_name(value: impl Into<String>)`](LakeConfigBuilder::s3_region_name) - provide the AWS S3 region name (if you need to set a custom one)
 //! * *optional* [`LakeConfigBuilder::s3_config(value: aws_sdk_s3::config::Config`](LakeConfigBuilder::s3_config) - provide custom AWS SDK S3 Config
 //!
-//! ## Cost estimates
+//! ## Cost estimates (Updated Mar 10, 2022 with more precise calculations)
 //!
-//! **TL;DR** approximately $18.15 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
+//! **TL;DR** approximately $20 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
+//!
+//! ### Historical indexing
+//!
+//! | Blocks | GET | LIST | Subtotal GET | Subtotal LIST | Total $ |
+//! |---|---|---|---|---|---|
+//! | 1000 | 5000 | 4 | 0.00215 | 0.0000216 | $0.00 |
+//! | 86,400 | 432000 | 345.6 | 0.18576 | 0.00186624 | $0.19 |
+//! | 2,592,000 | 12960000 | 10368 | 5.5728 | 0.0559872 | $5.63 |
+//! | 77,021,059 | 385105295 | 308084.236 | 165.5952769 | 1.663654874 | $167.26 |
+//!
+//! **Note:** ~77m of blocks is the number of blocks on the moment I was calculating.
+//!
+//! ### Tip of the network indexing
+//!
+//! | Blocks | GET | LIST | Subtotal GET | Subtotal LIST | Total $ |
+//! |---|---|---|---|---|---|
+//! | 1000 | 5000 | 1000 | 0.00215 | 0.0054 | $0.01 |
+//! | 86,400 | 432000 | 86,400 | 0.18576 | 0.46656 | $0.65 |
+//! | 2,592,000 | 12960000 | 2,592,000 | 5.5728 | 13.9968 | $19.57 |
+//! | 77,021,059 | 385105295 | 77,021,059 | 165.5952769 | 415.9137186 | $581.51 |
 //!
 //! Explanation:
 //!
 //! Assuming NEAR Protocol produces accurately 1 block per second (which is really not, the average block production time is 1.3s). A full day consists of 86400 seconds, that's the max number of blocks that can be produced.
 //!
-//! According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.005 per 1000 requests and `get` is charged for $0.0004 per 1000 requests.
+//! According the [Amazon S3 prices](https://aws.amazon.com/s3/pricing/?nc1=h_ls) `list` requests are charged for $0.0054 per 1000 requests and `get` is charged for $0.00043 per 1000 requests.
 //!
 //! Calculations (assuming we are following the tip of the network all the time):
 //!
 //! ```text
-//! 86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.173 * 30 days = $5.19
+//! 86400 blocks per day * 5 requests for each block / 1000 requests * $0.0004 per 1k requests = $0.19 * 30 days = $5.7
 //! ```
 //! **Note:** 5 requests for each block means we have 4 shards (1 file for common block data and 4 separate files for each shard)
 //!
 //! And a number of `list` requests we need to perform for 30 days:
 //!
 //! ```text
-//! 86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.432 * 30 days = $12.96
+//! 86400 blocks per day / 1000 requests * $0.005 per 1k list requests = $0.47 * 30 days = $14.1
 //!
-//! $5.19 + $12.96 = $18.15
-//!```
+//! $5.7 + $14.1 = $19.8
+//! ```
 //!
 //! The price depends on the number of shards
 //!
@@ -214,7 +234,7 @@
 //! We use Milestones with clearly defined acceptance criteria:
 //!
 //! * [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
-//! * [ ] [0.7 High-level update](https://github.com/near/near-lake-framework-rs/milestone/3)
+//! * [ ] [0.8 High-level update](https://github.com/near/near-lake-framework-rs/milestone/3)
 //! * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
 use aws_sdk_s3::Client;
 
