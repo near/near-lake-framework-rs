@@ -1,5 +1,5 @@
 [workspace]
-members = ["near-lake-framework", "near-lake-primitives"]
+members = ["lake-framework", "lake-primitives"]
 
 # cargo-workspaces
 [workspace.package]
