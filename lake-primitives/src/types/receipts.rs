@@ -251,6 +251,10 @@ impl From<&views::ActionView> for Operation {
             views::ActionView::DeleteAccount { beneficiary_id } => Self::DeleteAccount {
                 beneficiary_id: beneficiary_id.clone(),
             },
+            views::ActionView::Delegate {
+                delegate_action,
+                signature,
+            } => todo!(),
         }
     }
 }

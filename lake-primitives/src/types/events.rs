@@ -60,7 +60,7 @@ impl EventsTrait<Receipt> for Receipt {
             .filter_map(|log| RawEvent::from_log(log).ok())
             .map(|raw_event| Event {
                 related_receipt_id: self.receipt_id(),
-                raw_event
+                raw_event,
             })
             .collect()
     }

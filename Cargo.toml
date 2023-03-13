@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "near-lake-framework",
-    "near-lake-primitives",
+    "lake-framework",
+    "lake-primitives",
 ]
 
 # cargo-workspaces

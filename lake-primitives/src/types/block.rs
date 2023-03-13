@@ -142,18 +142,22 @@ impl Block {
         }
     }
 
-    pub fn events_by_account_id(&mut self, account_id: &crate::near_indexer_primitives::types::AccountId) -> Vec<events::Event> {
-        self
-            .events()
+    pub fn events_by_account_id(
+        &mut self,
+        account_id: &crate::near_indexer_primitives::types::AccountId,
+    ) -> Vec<events::Event> {
+        self.events()
             .iter()
-            .filter_map(|event| if let Some(action) = self.action_by_receipt_id(event.related_receipt_id()) {
-                if &action.receiver_id() == account_id || &action.signer_id() == account_id {
-                    Some(event.clone())
+            .filter_map(|event| {
+                if let Some(action) = self.action_by_receipt_id(event.related_receipt_id()) {
+                    if &action.receiver_id() == account_id || &action.signer_id() == account_id {
+                        Some(event.clone())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
-            } else {
-                None
             })
             .collect()
     }
