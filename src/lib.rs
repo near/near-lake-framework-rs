@@ -197,6 +197,10 @@
 //!
 //! **Note:** ~77m of blocks is the number of blocks on the moment I was calculating.
 //!
+// !**84,400 blocks is approximate number of blocks per day** (1 block per second * 60 seconds * 60 minutes * 24 hours)
+//!
+//! **2,592,000 blocks is approximate number of blocks per months** (86,400 blocks per day * 30 days)
+//!
 //! ### Tip of the network indexing
 //!
 //! | Blocks | GET | LIST | Subtotal GET | Subtotal LIST | Total $ |
