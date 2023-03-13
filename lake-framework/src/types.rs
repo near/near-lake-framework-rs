@@ -2,17 +2,17 @@
 pub type BlockHeight = u64;
 
 /// Configuration struct for NEAR Lake Framework
-/// NB! Consider using [`LakeConfigBuilder`]
-/// Building the `LakeConfig` example:
+/// NB! Consider using [`LakeBuilder`]
+/// Building the `Lake` example:
 /// ```
-/// use near_lake_framework::LakeConfigBuilder;
+/// use near_lake_framework::LakeBuilder;
 ///
-/// # async fn main() {
-///    let config = LakeConfigBuilder::default()
+/// # fn main() {
+///    let lake = LakeBuilder::default()
 ///        .testnet()
 ///        .start_block_height(82422587)
 ///        .build()
-///        .expect("Failed to build LakeConfig");
+///        .expect("Failed to build Lake");
 /// # }
 /// ```
 #[derive(Default, Builder, Debug)]
@@ -30,24 +30,22 @@ pub struct Lake {
     /// ## Use-case: custom endpoint
     /// You might want to stream data from the custom S3-compatible source () . In order to do that you'd need to pass `aws_sdk_s3::config::Config` configured
     /// ```
-    /// use aws_sdk_s3::Endpoint;
-    /// use http::Uri;
-    /// use near_lake_framework::LakeConfigBuilder;
+    /// use near_lake_framework::LakeBuilder;
     ///
+    /// # #[tokio::main]
     /// # async fn main() {
     ///     let aws_config = aws_config::from_env().load().await;
-    ///     let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config);
-    ///     s3_conf = s3_conf
-    ///         .endpoint_resolver(
-    ///             Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
+    ///     let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config)
+    ///         .endpoint_url("http://0.0.0.0:9000")
     ///         .build();
     ///
-    ///     let config = LakeConfigBuilder::default()
+    ///     let lake = LakeBuilder::default()
     ///         .s3_config(s3_conf)
     ///         .s3_bucket_name("near-lake-data-custom")
+    ///         .s3_region_name("eu-central-1")
     ///         .start_block_height(1)
     ///         .build()
-    ///         .expect("Failed to build LakeConfig");
+    ///         .expect("Failed to build Lake");
     /// # }
     /// ```
     #[builder(setter(strip_option), default)]
@@ -57,16 +55,16 @@ pub struct Lake {
 }
 
 impl LakeBuilder {
-    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for mainnet
+    /// Shortcut to set up [LakeBuilder::s3_bucket_name] for mainnet
     /// ```
-    /// use near_lake_framework::LakeConfigBuilder;
+    /// use near_lake_framework::LakeBuilder;
     ///
-    /// # async fn main() {
-    ///    let config = LakeConfigBuilder::default()
+    /// # fn main() {
+    ///    let lake = LakeBuilder::default()
     ///        .mainnet()
     ///        .start_block_height(65231161)
     ///        .build()
-    ///        .expect("Failed to build LakeConfig");
+    ///        .expect("Failed to build Lake");
     /// # }
     /// ```
     pub fn mainnet(mut self) -> Self {
@@ -75,16 +73,16 @@ impl LakeBuilder {
         self
     }
 
-    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for testnet
+    /// Shortcut to set up [LakeBuilder::s3_bucket_name] for testnet
     /// ```
-    /// use near_lake_framework::LakeConfigBuilder;
+    /// use near_lake_framework::LakeBuilder;
     ///
-    /// # async fn main() {
-    ///    let config = LakeConfigBuilder::default()
+    /// # fn main() {
+    ///    let lake = LakeBuilder::default()
     ///        .testnet()
     ///        .start_block_height(82422587)
     ///        .build()
-    ///        .expect("Failed to build LakeConfig");
+    ///        .expect("Failed to build Lake");
     /// # }
     /// ```
     pub fn testnet(mut self) -> Self {
@@ -93,16 +91,16 @@ impl LakeBuilder {
         self
     }
 
-    /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for betanet
+    /// Shortcut to set up [LakeBuilder::s3_bucket_name] for betanet
     /// ```
-    /// use near_lake_framework::LakeConfigBuilder;
+    /// use near_lake_framework::LakeBuilder;
     ///
-    /// # async fn main() {
-    ///    let config = LakeConfigBuilder::default()
+    /// # fn main() {
+    ///    let lake = LakeBuilder::default()
     ///        .betanet()
     ///        .start_block_height(82422587)
     ///        .build()
-    ///        .expect("Failed to build LakeConfig");
+    ///        .expect("Failed to build Lake");
     /// # }
     /// ```
     pub fn betanet(mut self) -> Self {
