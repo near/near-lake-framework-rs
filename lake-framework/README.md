@@ -6,49 +6,26 @@ the NEAR Protocol data.
 
 ## Example
 
-```ignore
-use futures::StreamExt;
-use near_lake_framework::LakeConfigBuilder;
-
-#[tokio::main]
-async fn main() -> Result<(), tokio::io::Error> {
-    // create a NEAR Lake Framework config
-    let config = LakeConfigBuilder::default()
+```no_run
+fn main() -> anyhow::Result<()> {
+    near_lake_framework::LakeBuilder::default()
         .testnet()
-        .start_block_height(82422587)
-        .build()
-        .expect("Failed to build LakeConfig");
-
-    // instantiate the NEAR Lake Framework Stream
-    let (sender, stream) = near_lake_framework::streamer(config);
-
-    // read the stream events and pass them to a handler function with
-    // concurrency 1
-    let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
-        .map(|streamer_message| handle_streamer_message(streamer_message))
-        .buffer_unordered(1usize);
-
-    while let Some(_handle_message) = handlers.next().await {}
-    drop(handlers); // close the channel so the sender will stop
-
-    // propagate errors from the sender
-    match sender.await {
-        Ok(Ok(())) => Ok(()),
-        Ok(Err(e)) => Err(e),
-        Err(e) => Err(anyhow::Error::from(e)), // JoinError
-    }
+        .start_block_height(112205773)
+        .build()?
+        .run(handle_block)
 }
 
-// The handler function to take the entire `StreamerMessage`
-// and print the block height and number of shards
-async fn handle_streamer_message(
-    streamer_message: near_lake_framework::near_indexer_primitives::StreamerMessage,
-) {
+// The handler function to take the `Block`
+// and print the block height
+async fn handle_block(
+    block: near_lake_primitives::block::Block,
+    _context: near_lake_framework::LakeContext,
+) -> anyhow::Result<()> {
     eprintln!(
-        "{} / shards {}",
-        streamer_message.block.header.height,
-        streamer_message.shards.len()
+        "Block #{}",
+        block.block_height(),
     );
+#    Ok(())
 }
 ```
 
@@ -76,7 +53,7 @@ In order to be able to get objects from the AWS S3 bucket you need to provide th
 ```rust
 use near_lake_framework::LakeBuilder;
 
-# async fn main() {
+# fn main() {
 let credentials = aws_credential_types::Credentials::new(
     "AKIAIOSFODNN7EXAMPLE",
     "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
@@ -88,9 +65,10 @@ let s3_config = aws_sdk_s3::Config::builder()
     .credentials_provider(credentials)
     .build();
 
-let config = LakeBuilder::default()
+let lake = LakeBuilder::default()
     .s3_config(s3_config)
     .s3_bucket_name("near-lake-data-custom")
+    .s3_region_name("eu-central-1")
     .start_block_height(1)
     .build()
     .expect("Failed to build LakeConfig");
@@ -134,7 +112,7 @@ tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-threa
 tokio-stream = { version = "0.1" }
 
 # NEAR Lake Framework
-near-lake-framework = "0.6.1"
+near-lake-framework = "0.8.0"
 ```
 
 ### Custom S3 storage
@@ -144,28 +122,26 @@ In case you want to run your own [near-lake](https://github.com/near/near-lake) 
 
  - run minio
 
-```text
+```bash
 $ mkdir -p /data/near-lake-custom && minio server /data
 ```
 
- - pass custom `aws_sdk_s3::config::Config` to the [LakeConfigBuilder]
+ - pass custom `aws_sdk_s3::config::Config` to the [LakeBuilder]
 
-```rust
-use aws_sdk_s3::Endpoint;
-use http::Uri;
+```
 use near_lake_framework::LakeBuilder;
 
-# fn main() {
+# #[tokio::main]
+# async fn main() {
 let aws_config = aws_config::from_env().load().await;
-let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config);
-s3_conf = s3_conf
-    .endpoint_resolver(
-        Endpoint::immutable("http://0.0.0.0:9000".parse::<Uri>().unwrap()))
+let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config)
+    .endpoint_url("http://0.0.0.0:9000")
     .build();
 
-let config = LakeBuilder::default()
+let lake = LakeBuilder::default()
     .s3_config(s3_conf)
     .s3_bucket_name("near-lake-data-custom")
+    .s3_region_name("eu-central-1")
     .start_block_height(1)
     .build()
     .expect("Failed to build LakeConfig");
