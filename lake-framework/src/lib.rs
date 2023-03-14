@@ -16,24 +16,17 @@ pub(crate) mod types;
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 
 /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
-/// ```
-/// use near_lake_framework::LakeConfigBuilder;
-/// use tokio::sync::mpsc;
-///
-/// # async fn main() {
-///    let config = LakeConfigBuilder::default()
+///```no_run
+///# fn main() -> anyhow::Result<()> {
+///    near_lake_framework::LakeBuilder::default()
 ///        .testnet()
-///        .start_block_height(82422587)
-///        .build()
-///        .expect("Failed to build LakeConfig");
+///        .start_block_height(112205773)
+///        .build()?
+///        .run(handle_block)
+///# }
 ///
-///     let (_, stream) = near_lake_framework::streamer(config);
-///
-///     while let Some(streamer_message) = stream.recv().await {
-///         eprintln!("{:#?}", streamer_message);
-///     }
-/// # }
-/// ```
+/// # async fn handle_block(_block: near_lake_primitives::block::Block, _context: near_lake_framework::LakeContext) -> anyhow::Result<()> { Ok(()) }
+///```
 impl types::Lake {
     pub fn run<Fut>(
         self,
