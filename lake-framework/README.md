@@ -50,7 +50,7 @@ In order to be able to get objects from the AWS S3 bucket you need to provide th
 
 #### Passing credentials to the config builder
 
-```
+```rust
 use near_lake_framework::LakeBuilder;
 
 # fn main() {
@@ -103,7 +103,7 @@ $ AWS_DEFAULT_REGION=eu-central-1
 
 Add the following dependencies to your `Cargo.toml`
 
-```text
+```toml
 ...
 [dependencies]
 futures = "0.3.5"
@@ -122,7 +122,7 @@ In case you want to run your own [near-lake](https://github.com/near/near-lake) 
 
  - run minio
 
-```text
+```bash
 $ mkdir -p /data/near-lake-custom && minio server /data
 ```
 
