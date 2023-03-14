@@ -97,7 +97,7 @@ tokio-stream = { version = "0.1" }
 near-lake-framework = "0.6.1"
 ```
 
-## Cost estimates (Updated Mar 10, 2022 with more precise calculations)
+## Cost estimates (Updated Mar 10, 2023 with more precise calculations)
 
 **TL;DR** approximately $20 per month (for AWS S3 access, paid directly to AWS) for the reading of fresh blocks
 
@@ -111,6 +111,10 @@ near-lake-framework = "0.6.1"
 | 77,021,059 | 385105295 | 308084.236 | 165.5952769 | 1.663654874 | $167.26 |
 
 **Note:** ~77m of blocks is the number of blocks on the moment I was calculating.
+
+**84,400 blocks is approximate number of blocks per day** (1 block per second * 60 seconds * 60 minutes * 24 hours)
+
+**2,592,000 blocks is approximate number of blocks per months** (86,400 blocks per day * 30 days)
 
 ### Tip of the network indexing
 
