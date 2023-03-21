@@ -98,7 +98,7 @@ impl Block {
                     if let Ok(event) = events::RawEvent::from_log(&log) {
                         Some(events::Event {
                             related_receipt_id: executed_receipt.receipt_id(),
-                            raw_event: event.clone(),
+                            raw_event: event,
                         })
                     } else {
                         None
@@ -218,11 +218,11 @@ impl BlockHeader {
     }
 
     pub fn hash(&self) -> CryptoHash {
-        self.hash.clone()
+        self.hash
     }
 
     pub fn prev_hash(&self) -> CryptoHash {
-        self.prev_hash.clone()
+        self.prev_hash
     }
 
     pub fn author(&self) -> AccountId {
@@ -234,11 +234,11 @@ impl BlockHeader {
     }
 
     pub fn epoch_id(&self) -> CryptoHash {
-        self.epoch_id.clone()
+        self.epoch_id
     }
 
     pub fn next_epoch_id(&self) -> CryptoHash {
-        self.next_epoch_id.clone()
+        self.next_epoch_id
     }
 
     pub fn gas_price(&self) -> u128 {
@@ -254,7 +254,7 @@ impl BlockHeader {
     }
 
     pub fn random_value(&self) -> CryptoHash {
-        self.random_value.clone()
+        self.random_value
     }
 
     pub fn chunks_included(&self) -> u64 {

@@ -2,8 +2,7 @@ use crate::near_indexer_primitives::{
     types::{AccountId, Balance, Gas},
     views, CryptoHash, IndexerExecutionOutcomeWithReceipt,
 };
-use near_crypto::PublicKey;
-use near_primitives_core::serialize::{base64_format, dec_format};
+use near_crypto::{PublicKey, Signature};
 
 #[derive(Debug, Clone)]
 pub struct Receipt {
@@ -22,7 +21,7 @@ impl Receipt {
     }
 
     pub fn receipt_id(&self) -> CryptoHash {
-        self.receipt_id.clone()
+        self.receipt_id
     }
 
     pub fn receiver_id(&self) -> AccountId {
@@ -38,7 +37,7 @@ impl Receipt {
     }
 
     pub fn execution_outcome_id(&self) -> Option<CryptoHash> {
-        self.execution_outcome_id.clone()
+        self.execution_outcome_id
     }
 
     pub fn logs(&self) -> Vec<String> {
@@ -130,7 +129,7 @@ pub struct Action {
 
 impl Action {
     pub fn receipt_id(&self) -> CryptoHash {
-        self.receipt_id.clone()
+        self.receipt_id
     }
 
     pub fn predecessor_id(&self) -> AccountId {
@@ -179,27 +178,22 @@ impl TryFrom<&views::ReceiptView> for Action {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub enum Operation {
     CreateAccount,
     DeployContract {
-        #[serde(with = "base64_format")]
         code: Vec<u8>,
     },
     FunctionCall {
         method_name: String,
-        #[serde(with = "base64_format")]
         args: Vec<u8>,
         gas: Gas,
-        #[serde(with = "dec_format")]
         deposit: Balance,
     },
     Transfer {
-        #[serde(with = "dec_format")]
         deposit: Balance,
     },
     Stake {
-        #[serde(with = "dec_format")]
         stake: Balance,
         public_key: PublicKey,
     },
@@ -212,6 +206,10 @@ pub enum Operation {
     },
     DeleteAccount {
         beneficiary_id: AccountId,
+    },
+    Delegate {
+        delegate_action: DelegateAction,
+        signature: Signature,
     },
 }
 
@@ -254,7 +252,76 @@ impl From<&views::ActionView> for Operation {
             views::ActionView::Delegate {
                 delegate_action,
                 signature,
-            } => todo!(),
+            } => Self::Delegate {
+                delegate_action: delegate_action.into(),
+                signature: signature.clone(),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DelegateAction {
+    pub sender_id: AccountId,
+    pub receiver_id: AccountId,
+    /// List of actions to be executed.
+    ///
+    /// With the meta transactions MVP defined in NEP-366, nested
+    /// DelegateActions are not allowed. A separate type is used to enforce it.
+    pub operations: Vec<NonDelegateOperation>,
+    pub nonce: u64,
+    /// The maximal height of the block in the blockchain below which the given DelegateAction is valid.
+    pub max_block_height: u64,
+    pub public_key: PublicKey,
+}
+
+impl From<&near_primitives::delegate_action::DelegateAction> for DelegateAction {
+    fn from(delegate_action: &near_primitives::delegate_action::DelegateAction) -> Self {
+        let operations: Vec<NonDelegateOperation> = delegate_action
+            .actions
+            .iter()
+            .cloned()
+            .map(Into::into)
+            .collect();
+
+        Self {
+            sender_id: delegate_action.sender_id.clone(),
+            receiver_id: delegate_action.receiver_id.clone(),
+            operations,
+            nonce: delegate_action.nonce,
+            max_block_height: delegate_action.max_block_height,
+            public_key: delegate_action.public_key.clone(),
+        }
+    }
+}
+
+impl From<near_primitives::delegate_action::NonDelegateAction> for NonDelegateOperation {
+    fn from(non_delegate_action: near_primitives::delegate_action::NonDelegateAction) -> Self {
+        non_delegate_action.into()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NonDelegateOperation(Operation);
+
+impl From<NonDelegateOperation> for Operation {
+    fn from(operation: NonDelegateOperation) -> Self {
+        operation.0
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("attempted to construct NonDelegateOperation from Operation::Delegate")]
+pub struct IsDelegateAction;
+
+impl TryFrom<Operation> for NonDelegateOperation {
+    type Error = IsDelegateAction;
+
+    fn try_from(operation: Operation) -> Result<Self, IsDelegateAction> {
+        if matches!(operation, Operation::Delegate { .. }) {
+            Err(IsDelegateAction)
+        } else {
+            Ok(Self(operation))
         }
     }
 }

@@ -17,7 +17,7 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn transaction_hash(&self) -> CryptoHash {
-        self.transaction_hash.clone()
+        self.transaction_hash
     }
 
     pub fn signer_id(&self) -> AccountId {
@@ -41,7 +41,7 @@ impl Transaction {
     }
 
     pub fn execution_outcome_id(&self) -> CryptoHash {
-        self.execution_outcome_id.clone()
+        self.execution_outcome_id
     }
 
     pub fn operations(&self) -> Vec<Operation> {
