@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::events::{self, EventsTrait};
-use super::receipts;
+use super::receipts::{self, Action};
 use super::state_changes;
 use super::transactions;
 use crate::near_indexer_primitives::{types::AccountId, views, CryptoHash, StreamerMessage};
@@ -12,7 +12,7 @@ pub struct Block {
     executed_receipts: Vec<receipts::Receipt>,
     postponed_receipts: Vec<receipts::Receipt>,
     transactions: Vec<transactions::Transaction>,
-    actions: HashMap<super::ReceiptId, receipts::Action>,
+    actions: Vec<receipts::ActionKind>,
     events: HashMap<super::ReceiptId, Vec<events::Event>>,
     state_changes: Vec<state_changes::StateChange>,
 }
@@ -79,33 +79,31 @@ impl Block {
         &self.transactions
     }
 
-    pub fn actions(&self) -> Vec<receipts::Action> {
+    pub fn actions_from_streamer_message(&self) -> Vec<receipts::ActionKind> {
         self.streamer_message()
             .shards
             .iter()
             .flat_map(|shard| shard.receipt_execution_outcomes.iter())
             .filter_map(|receipt_execution_outcome| {
-                receipts::Action::try_from(&receipt_execution_outcome.receipt).ok()
+                receipts::ActionKind::try_vec_from_receipt_view(&receipt_execution_outcome.receipt)
+                    .ok()
             })
+            .flatten()
             .collect()
     }
 
-    pub fn events(&mut self) -> Vec<events::Event> {
-        self.receipts()
-            .iter()
-            .flat_map(|executed_receipt| {
-                executed_receipt.logs().into_iter().filter_map(|log| {
-                    if let Ok(event) = events::RawEvent::from_log(&log) {
-                        Some(events::Event {
-                            related_receipt_id: executed_receipt.receipt_id(),
-                            raw_event: event,
-                        })
-                    } else {
-                        None
-                    }
-                })
-            })
-            .collect()
+    pub fn actions(&mut self) -> std::slice::Iter<'_, impl Action + std::fmt::Debug + Clone> {
+        if self.actions.is_empty() {
+            self.actions = self.actions_from_streamer_message();
+        }
+        self.actions.iter()
+    }
+
+    pub fn events(&mut self) -> Vec<&events::Event> {
+        if self.events.is_empty() {
+            self.build_events_hashmap();
+        }
+        self.events.values().flatten().collect()
     }
 
     pub fn state_changes(&mut self) -> &[state_changes::StateChange] {
@@ -121,14 +119,17 @@ impl Block {
         &self.state_changes
     }
 
-    pub fn action_by_receipt_id(
+    pub fn actions_by_receipt_id(
         &mut self,
         receipt_id: &super::ReceiptId,
-    ) -> Option<&receipts::Action> {
+    ) -> Vec<&(impl Action + std::fmt::Debug + Clone)> {
         if self.actions.is_empty() {
-            self.build_actions_hashmap();
+            self.build_actions_cache();
         }
-        self.actions.get(receipt_id)
+        self.actions
+            .iter()
+            .filter(|action| &action.receipt_id() == receipt_id)
+            .collect()
     }
 
     pub fn events_by_receipt_id(&mut self, receipt_id: &super::ReceiptId) -> Vec<events::Event> {
@@ -143,33 +144,27 @@ impl Block {
     }
 
     pub fn events_by_account_id(
-        &mut self,
-        account_id: &crate::near_indexer_primitives::types::AccountId,
+        mut self,
+        account_id: crate::near_indexer_primitives::types::AccountId,
     ) -> Vec<events::Event> {
         self.events()
             .iter()
-            .filter_map(|event| {
-                if let Some(action) = self.action_by_receipt_id(event.related_receipt_id()) {
-                    if &action.receiver_id() == account_id || &action.signer_id() == account_id {
-                        Some(event.clone())
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
+            .cloned()
+            .filter(|event| event.is_related_to(&account_id))
+            .map(Clone::clone)
             .collect()
+    }
+
+    pub fn receipt_by_id(&mut self, receipt_id: &super::ReceiptId) -> Option<&receipts::Receipt> {
+        self.receipts()
+            .iter()
+            .find(|receipt| &receipt.receipt_id() == receipt_id)
     }
 }
 
 impl Block {
-    fn build_actions_hashmap(&mut self) {
-        self.actions = self
-            .actions()
-            .iter()
-            .map(|action| (action.receipt_id(), action.clone()))
-            .collect();
+    fn build_actions_cache(&mut self) {
+        self.actions = self.actions_from_streamer_message().to_vec();
     }
 
     fn build_events_hashmap(&mut self) {
@@ -188,7 +183,7 @@ impl From<StreamerMessage> for Block {
             executed_receipts: vec![],
             postponed_receipts: vec![],
             transactions: vec![],
-            actions: HashMap::new(),
+            actions: vec![],
             events: HashMap::new(),
             state_changes: vec![],
         }

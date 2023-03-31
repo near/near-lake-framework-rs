@@ -24,3 +24,7 @@ near-lake-primitives = { path = "../lake-primitives" }
 
 [dev-dependencies]
 aws-smithy-http = "0.53.0"
+
+# used by nft_indexer example
+regex = "1.5.4"
+once_cell = "1.8.0"

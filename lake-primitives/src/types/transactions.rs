@@ -1,6 +1,6 @@
 use near_crypto::{PublicKey, Signature};
 
-use super::receipts::{ExecutionStatus, Operation};
+use super::receipts::ExecutionStatus;
 use crate::near_indexer_primitives::{types::AccountId, CryptoHash, IndexerTransactionWithOutcome};
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct Transaction {
     receiver_id: AccountId,
     status: ExecutionStatus,
     execution_outcome_id: CryptoHash,
-    operations: Vec<Operation>,
+    // actions: Vec<ActionKind>,
 }
 
 impl Transaction {
@@ -44,9 +44,9 @@ impl Transaction {
         self.execution_outcome_id
     }
 
-    pub fn operations(&self) -> Vec<Operation> {
-        self.operations.clone()
-    }
+    // pub fn actions(&self) -> Vec<ActionKind> {
+    //     self.actions.clone()
+    // }
 }
 
 impl From<&IndexerTransactionWithOutcome> for Transaction {
@@ -59,12 +59,12 @@ impl From<&IndexerTransactionWithOutcome> for Transaction {
             receiver_id: tx_with_outcome.transaction.receiver_id.clone(),
             execution_outcome_id: tx_with_outcome.outcome.execution_outcome.id,
             status: (&tx_with_outcome.outcome.execution_outcome.outcome.status).into(),
-            operations: tx_with_outcome
-                .transaction
-                .actions
-                .iter()
-                .map(Into::into)
-                .collect(),
+            // actions: tx_with_outcome
+            //     .transaction
+            //     .actions
+            //     .iter()
+            //     .map(Into::into)
+            //     .collect(),
         }
     }
 }

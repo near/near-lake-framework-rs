@@ -1,8 +1,12 @@
+use crate::AccountId;
+
 use super::receipts::Receipt;
 
 #[derive(Clone, Debug)]
 pub struct Event {
     pub(crate) related_receipt_id: crate::CryptoHash,
+    pub(crate) receiver_id: AccountId,
+    pub(crate) predecessor_id: AccountId,
     pub(crate) raw_event: RawEvent,
 }
 
@@ -25,6 +29,19 @@ impl Event {
 
     pub fn related_receipt_id(&self) -> &crate::CryptoHash {
         &self.related_receipt_id
+    }
+
+    pub fn related_receipt_receiver_id(&self) -> &AccountId {
+        &self.receiver_id
+    }
+
+    pub fn related_receipt_predecessor_id(&self) -> &AccountId {
+        &self.predecessor_id
+    }
+
+    // checks it predecessor_id or receiver_id is equal to the given account_id
+    pub fn is_related_to(&self, account_id: &AccountId) -> bool {
+        &self.receiver_id == account_id || &self.predecessor_id == account_id
     }
 }
 
@@ -60,6 +77,8 @@ impl EventsTrait<Receipt> for Receipt {
             .filter_map(|log| RawEvent::from_log(log).ok())
             .map(|raw_event| Event {
                 related_receipt_id: self.receipt_id(),
+                receiver_id: self.receiver_id(),
+                predecessor_id: self.predecessor_id(),
                 raw_event,
             })
             .collect()
