@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::events::{self, EventsTrait};
-use super::receipts::{self, Action};
+use super::receipts::{self, ActionMetaDataExt};
 use super::state_changes;
 use super::transactions;
 use crate::near_indexer_primitives::{types::AccountId, views, CryptoHash, StreamerMessage};
@@ -12,7 +12,7 @@ pub struct Block {
     executed_receipts: Vec<receipts::Receipt>,
     postponed_receipts: Vec<receipts::Receipt>,
     transactions: Vec<transactions::Transaction>,
-    actions: Vec<receipts::ActionKind>,
+    actions: Vec<receipts::Action>,
     events: HashMap<super::ReceiptId, Vec<events::Event>>,
     state_changes: Vec<state_changes::StateChange>,
 }
@@ -73,26 +73,26 @@ impl Block {
                 .iter()
                 .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.transactions.iter()))
                 .flatten()
-                .map(Into::into)
+                .map(TryInto::try_into)
+                .filter_map(|transactions| transactions.ok())
                 .collect();
         }
         &self.transactions
     }
 
-    pub fn actions_from_streamer_message(&self) -> Vec<receipts::ActionKind> {
+    pub fn actions_from_streamer_message(&self) -> Vec<receipts::Action> {
         self.streamer_message()
             .shards
             .iter()
             .flat_map(|shard| shard.receipt_execution_outcomes.iter())
             .filter_map(|receipt_execution_outcome| {
-                receipts::ActionKind::try_vec_from_receipt_view(&receipt_execution_outcome.receipt)
-                    .ok()
+                receipts::Action::try_vec_from_receipt_view(&receipt_execution_outcome.receipt).ok()
             })
             .flatten()
             .collect()
     }
 
-    pub fn actions(&mut self) -> std::slice::Iter<'_, impl Action + std::fmt::Debug + Clone> {
+    pub fn actions(&mut self) -> std::slice::Iter<'_, receipts::Action> {
         if self.actions.is_empty() {
             self.actions = self.actions_from_streamer_message();
         }
@@ -122,7 +122,7 @@ impl Block {
     pub fn actions_by_receipt_id(
         &mut self,
         receipt_id: &super::ReceiptId,
-    ) -> Vec<&(impl Action + std::fmt::Debug + Clone)> {
+    ) -> Vec<&receipts::Action> {
         if self.actions.is_empty() {
             self.build_actions_cache();
         }

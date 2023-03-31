@@ -151,7 +151,7 @@ impl ActionMetadata {
     }
 }
 
-pub trait Action {
+pub trait ActionMetaDataExt {
     fn metadata(&self) -> &ActionMetadata;
 
     fn receipt_id(&self) -> CryptoHash {
@@ -169,46 +169,10 @@ pub trait Action {
     fn signer_public_key(&self) -> PublicKey {
         self.metadata().signer_public_key()
     }
-
-    fn as_create_account(&self) -> Option<&CreateAccount> {
-        None
-    }
-
-    fn as_deploy_contract(&self) -> Option<&DeployContract> {
-        None
-    }
-
-    fn as_function_call(&self) -> Option<&FunctionCall> {
-        None
-    }
-
-    fn as_transfer(&self) -> Option<&Transfer> {
-        None
-    }
-
-    fn as_stake(&self) -> Option<&Stake> {
-        None
-    }
-
-    fn as_add_key(&self) -> Option<&AddKey> {
-        None
-    }
-
-    fn as_delete_key(&self) -> Option<&DeleteKey> {
-        None
-    }
-
-    fn as_delete_account(&self) -> Option<&DeleteAccount> {
-        None
-    }
-
-    fn as_delegate_action(&self) -> Option<&DelegateAction> {
-        None
-    }
 }
 
 #[derive(Debug, Clone)]
-pub enum ActionKind {
+pub enum Action {
     CreateAccount(CreateAccount),
     DeployContract(DeployContract),
     FunctionCall(FunctionCall),
@@ -217,23 +181,10 @@ pub enum ActionKind {
     AddKey(AddKey),
     DeleteKey(DeleteKey),
     DeleteAccount(DeleteAccount),
-    DelegateAction(DelegateAction),
+    Delegate(Delegate),
 }
 
-macro_rules! impl_as_action_for {
-    ($action_type:ident) => {
-        paste::paste! {
-            fn [< as_ $action_type:snake:lower >](&self) -> Option<&$action_type> {
-                match self {
-                    Self::$action_type(action) => Some(action),
-                    _ => None,
-                }
-            }
-        }
-    };
-}
-
-impl Action for ActionKind {
+impl ActionMetaDataExt for Action {
     fn metadata(&self) -> &ActionMetadata {
         match self {
             Self::CreateAccount(action) => action.metadata(),
@@ -244,10 +195,25 @@ impl Action for ActionKind {
             Self::AddKey(action) => action.metadata(),
             Self::DeleteKey(action) => action.metadata(),
             Self::DeleteAccount(action) => action.metadata(),
-            Self::DelegateAction(action) => action.metadata(),
+            Self::Delegate(action) => action.metadata(),
         }
     }
+}
 
+macro_rules! impl_as_action_for {
+    ($action_type:ident) => {
+        paste::paste! {
+            pub fn [< as_ $action_type:snake:lower >](&self) -> Option<&$action_type> {
+                match self {
+                    Self::$action_type(action) => Some(action),
+                    _ => None,
+                }
+            }
+        }
+    };
+}
+
+impl Action {
     impl_as_action_for!(CreateAccount);
     impl_as_action_for!(DeployContract);
     impl_as_action_for!(FunctionCall);
@@ -256,7 +222,7 @@ impl Action for ActionKind {
     impl_as_action_for!(AddKey);
     impl_as_action_for!(DeleteKey);
     impl_as_action_for!(DeleteAccount);
-    impl_as_action_for!(DelegateAction);
+    impl_as_action_for!(Delegate);
 }
 
 #[derive(Debug, Clone)]
@@ -374,14 +340,14 @@ impl DeleteAccount {
 }
 
 #[derive(Debug, Clone)]
-pub struct DelegateAction {
+pub struct Delegate {
     metadata: ActionMetadata,
-    delegate_action: Vec<DelegateActionKind>,
+    delegate_action: Vec<DelegateAction>,
     signature: Signature,
 }
 
-impl DelegateAction {
-    pub fn delegate_action(&self) -> &[DelegateActionKind] {
+impl Delegate {
+    pub fn delegate_action(&self) -> &[DelegateAction] {
         &self.delegate_action
     }
 
@@ -391,7 +357,7 @@ impl DelegateAction {
 }
 
 #[derive(Debug, Clone)]
-pub enum DelegateActionKind {
+pub enum DelegateAction {
     CreateAccount(CreateAccount),
     DeployContract(DeployContract),
     FunctionCall(FunctionCall),
@@ -402,28 +368,26 @@ pub enum DelegateActionKind {
     DeleteAccount(DeleteAccount),
 }
 
-impl TryFrom<ActionKind> for DelegateActionKind {
+impl TryFrom<Action> for DelegateAction {
     type Error = &'static str;
 
-    fn try_from(action: ActionKind) -> Result<Self, Self::Error> {
+    fn try_from(action: Action) -> Result<Self, Self::Error> {
         match action {
-            ActionKind::CreateAccount(ca) => Ok(DelegateActionKind::CreateAccount(ca)),
-            ActionKind::DeployContract(dc) => Ok(DelegateActionKind::DeployContract(dc)),
-            ActionKind::FunctionCall(fc) => Ok(DelegateActionKind::FunctionCall(fc)),
-            ActionKind::Transfer(t) => Ok(DelegateActionKind::Transfer(t)),
-            ActionKind::Stake(s) => Ok(DelegateActionKind::Stake(s)),
-            ActionKind::AddKey(ak) => Ok(DelegateActionKind::AddKey(ak)),
-            ActionKind::DeleteKey(dk) => Ok(DelegateActionKind::DeleteKey(dk)),
-            ActionKind::DeleteAccount(da) => Ok(DelegateActionKind::DeleteAccount(da)),
-            ActionKind::DelegateAction(_) => {
-                Err("Cannot convert DelegateAction to DelegateActionKind")
-            }
+            Action::CreateAccount(ca) => Ok(Self::CreateAccount(ca)),
+            Action::DeployContract(dc) => Ok(Self::DeployContract(dc)),
+            Action::FunctionCall(fc) => Ok(Self::FunctionCall(fc)),
+            Action::Transfer(t) => Ok(Self::Transfer(t)),
+            Action::Stake(s) => Ok(Self::Stake(s)),
+            Action::AddKey(ak) => Ok(Self::AddKey(ak)),
+            Action::DeleteKey(dk) => Ok(Self::DeleteKey(dk)),
+            Action::DeleteAccount(da) => Ok(Self::DeleteAccount(da)),
+            Action::Delegate(_) => Err("Cannot convert DelegateAction to DelegateAction"),
         }
     }
 }
 
-impl ActionKind {
-    // Tries to convert a ReceiptView into a vector of ActionKind.
+impl Action {
+    // Tries to convert a ReceiptView into a vector of Action.
     pub fn try_vec_from_receipt_view(
         receipt_view: &views::ReceiptView,
     ) -> Result<Vec<Self>, &'static str> {
@@ -446,11 +410,11 @@ impl ActionKind {
 
             for action in actions {
                 let action_kind = match action {
-                    views::ActionView::CreateAccount => ActionKind::CreateAccount(CreateAccount {
+                    views::ActionView::CreateAccount => Self::CreateAccount(CreateAccount {
                         metadata: metadata.clone(),
                     }),
                     views::ActionView::DeployContract { code } => {
-                        ActionKind::DeployContract(DeployContract {
+                        Self::DeployContract(DeployContract {
                             metadata: metadata.clone(),
                             code: code.clone(),
                         })
@@ -460,18 +424,18 @@ impl ActionKind {
                         args,
                         gas,
                         deposit,
-                    } => ActionKind::FunctionCall(FunctionCall {
+                    } => Self::FunctionCall(FunctionCall {
                         metadata: metadata.clone(),
                         method_name: method_name.clone(),
                         args: args.clone(),
                         gas: *gas,
                         deposit: *deposit,
                     }),
-                    views::ActionView::Transfer { deposit } => ActionKind::Transfer(Transfer {
+                    views::ActionView::Transfer { deposit } => Self::Transfer(Transfer {
                         metadata: metadata.clone(),
                         deposit: *deposit,
                     }),
-                    views::ActionView::Stake { stake, public_key } => ActionKind::Stake(Stake {
+                    views::ActionView::Stake { stake, public_key } => Self::Stake(Stake {
                         metadata: metadata.clone(),
                         stake: *stake,
                         public_key: public_key.clone(),
@@ -479,19 +443,17 @@ impl ActionKind {
                     views::ActionView::AddKey {
                         public_key,
                         access_key,
-                    } => ActionKind::AddKey(AddKey {
+                    } => Self::AddKey(AddKey {
                         metadata: metadata.clone(),
                         public_key: public_key.clone(),
                         access_key: access_key.clone(),
                     }),
-                    views::ActionView::DeleteKey { public_key } => {
-                        ActionKind::DeleteKey(DeleteKey {
-                            metadata: metadata.clone(),
-                            public_key: public_key.clone(),
-                        })
-                    }
+                    views::ActionView::DeleteKey { public_key } => Self::DeleteKey(DeleteKey {
+                        metadata: metadata.clone(),
+                        public_key: public_key.clone(),
+                    }),
                     views::ActionView::DeleteAccount { beneficiary_id } => {
-                        ActionKind::DeleteAccount(DeleteAccount {
+                        Self::DeleteAccount(DeleteAccount {
                             metadata: metadata.clone(),
                             beneficiary_id: beneficiary_id.clone(),
                         })
@@ -504,9 +466,9 @@ impl ActionKind {
                             Self::try_from_delegate_action(delegate_action, metadata.clone())?
                                 .into_iter()
                                 .map(TryInto::try_into)
-                                .collect::<Result<Vec<DelegateActionKind>, &str>>()?;
+                                .collect::<Result<Vec<DelegateAction>, &str>>()?;
 
-                        ActionKind::DelegateAction(DelegateAction {
+                        Self::Delegate(Delegate {
                             metadata: metadata.clone(),
                             delegate_action: delegate_action_kind,
                             signature: signature.clone(),
@@ -517,11 +479,11 @@ impl ActionKind {
             }
             Ok(result)
         } else {
-            Err("Only `ReceiptEnumView::Action` can be converted into Vec<ActionKind>")
+            Err("Only `ReceiptEnumView::Action` can be converted into Vec<Action>")
         }
     }
 
-    // Tries to convert a near_primitives::delegate_action::DelegateAction into a vector of ActionKind.
+    // Tries to convert a near_primitives::delegate_action::DelegateAction into a vector of Action.
     pub fn try_from_delegate_action(
         delegate_action: &near_primitives::delegate_action::DelegateAction,
         metadata: ActionMetadata,
@@ -534,11 +496,11 @@ impl ActionKind {
                     near_primitives::transaction::Action,
                 >>::into(action),
             ) {
-                views::ActionView::CreateAccount => ActionKind::CreateAccount(CreateAccount {
+                views::ActionView::CreateAccount => Self::CreateAccount(CreateAccount {
                     metadata: metadata.clone(),
                 }),
                 views::ActionView::DeployContract { code } => {
-                    ActionKind::DeployContract(DeployContract {
+                    Self::DeployContract(DeployContract {
                         metadata: metadata.clone(),
                         code,
                     })
@@ -548,18 +510,18 @@ impl ActionKind {
                     args,
                     gas,
                     deposit,
-                } => ActionKind::FunctionCall(FunctionCall {
+                } => Self::FunctionCall(FunctionCall {
                     metadata: metadata.clone(),
                     method_name,
                     args,
                     gas,
                     deposit,
                 }),
-                views::ActionView::Transfer { deposit } => ActionKind::Transfer(Transfer {
+                views::ActionView::Transfer { deposit } => Self::Transfer(Transfer {
                     metadata: metadata.clone(),
                     deposit,
                 }),
-                views::ActionView::Stake { stake, public_key } => ActionKind::Stake(Stake {
+                views::ActionView::Stake { stake, public_key } => Self::Stake(Stake {
                     metadata: metadata.clone(),
                     stake,
                     public_key,
@@ -567,17 +529,17 @@ impl ActionKind {
                 views::ActionView::AddKey {
                     public_key,
                     access_key,
-                } => ActionKind::AddKey(AddKey {
+                } => Self::AddKey(AddKey {
                     metadata: metadata.clone(),
                     public_key,
                     access_key,
                 }),
-                views::ActionView::DeleteKey { public_key } => ActionKind::DeleteKey(DeleteKey {
+                views::ActionView::DeleteKey { public_key } => Self::DeleteKey(DeleteKey {
                     metadata: metadata.clone(),
                     public_key,
                 }),
                 views::ActionView::DeleteAccount { beneficiary_id } => {
-                    ActionKind::DeleteAccount(DeleteAccount {
+                    Self::DeleteAccount(DeleteAccount {
                         metadata: metadata.clone(),
                         beneficiary_id,
                     })
@@ -593,32 +555,22 @@ impl ActionKind {
 }
 
 // Macro to implement Action trait for each ActionKind variant.
-macro_rules! impl_action {
+macro_rules! impl_action_metadata_ext {
     ($action:ident) => {
-        impl Action for $action {
+        impl ActionMetaDataExt for $action {
             fn metadata(&self) -> &ActionMetadata {
                 &self.metadata
-            }
-
-            paste::paste! {
-                fn [< as_ $action:snake:lower >](&self) -> Option<&$action> {
-                    if matches!(self, $action { .. }) {
-                        Some(self)
-                    } else {
-                        None
-                    }
-                }
             }
         }
     };
 }
 
-impl_action!(CreateAccount);
-impl_action!(DeployContract);
-impl_action!(FunctionCall);
-impl_action!(Transfer);
-impl_action!(Stake);
-impl_action!(AddKey);
-impl_action!(DeleteKey);
-impl_action!(DeleteAccount);
-impl_action!(DelegateAction);
+impl_action_metadata_ext!(CreateAccount);
+impl_action_metadata_ext!(DeployContract);
+impl_action_metadata_ext!(FunctionCall);
+impl_action_metadata_ext!(Transfer);
+impl_action_metadata_ext!(Stake);
+impl_action_metadata_ext!(AddKey);
+impl_action_metadata_ext!(DeleteKey);
+impl_action_metadata_ext!(DeleteAccount);
+impl_action_metadata_ext!(Delegate);

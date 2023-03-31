@@ -12,7 +12,7 @@ pub struct Transaction {
     receiver_id: AccountId,
     status: ExecutionStatus,
     execution_outcome_id: CryptoHash,
-    // actions: Vec<ActionKind>,
+    actions: Vec<super::receipts::Action>,
 }
 
 impl Transaction {
@@ -44,27 +44,28 @@ impl Transaction {
         self.execution_outcome_id
     }
 
-    // pub fn actions(&self) -> Vec<ActionKind> {
-    //     self.actions.clone()
-    // }
+    pub fn actions_included(&self) -> Vec<super::receipts::Action> {
+        self.actions.clone()
+    }
 }
 
-impl From<&IndexerTransactionWithOutcome> for Transaction {
-    fn from(tx_with_outcome: &IndexerTransactionWithOutcome) -> Self {
-        Self {
-            transaction_hash: tx_with_outcome.transaction.hash,
-            signer_id: tx_with_outcome.transaction.signer_id.clone(),
-            signer_public_key: tx_with_outcome.transaction.public_key.clone(),
-            signature: tx_with_outcome.transaction.signature.clone(),
-            receiver_id: tx_with_outcome.transaction.receiver_id.clone(),
-            execution_outcome_id: tx_with_outcome.outcome.execution_outcome.id,
-            status: (&tx_with_outcome.outcome.execution_outcome.outcome.status).into(),
-            // actions: tx_with_outcome
-            //     .transaction
-            //     .actions
-            //     .iter()
-            //     .map(Into::into)
-            //     .collect(),
+impl TryFrom<&IndexerTransactionWithOutcome> for Transaction {
+    type Error = &'static str;
+
+    fn try_from(tx_with_outcome: &IndexerTransactionWithOutcome) -> Result<Self, Self::Error> {
+        if let Some(receipt_view) = &tx_with_outcome.outcome.receipt {
+            Ok(Self {
+                transaction_hash: tx_with_outcome.transaction.hash,
+                signer_id: tx_with_outcome.transaction.signer_id.clone(),
+                signer_public_key: tx_with_outcome.transaction.public_key.clone(),
+                signature: tx_with_outcome.transaction.signature.clone(),
+                receiver_id: tx_with_outcome.transaction.receiver_id.clone(),
+                execution_outcome_id: tx_with_outcome.outcome.execution_outcome.id,
+                status: (&tx_with_outcome.outcome.execution_outcome.outcome.status).into(),
+                actions: super::receipts::Action::try_vec_from_receipt_view(receipt_view)?,
+            })
+        } else {
+            Err("Transaction outcome is missing receipt")
         }
     }
 }

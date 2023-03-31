@@ -1,10 +1,9 @@
 //! This example shows how to filter actions in a block.
 //! It it a more real-life example than the simple example.
 //! It is going to follow the NEAR Social contract and print all function calls to it.
-
 use near_lake_framework::near_lake_primitives;
-// Note we need to import trait Actions
-use near_lake_primitives::receipts::Action;
+// We need to import this trait to use the `as_function_call` method.
+use near_lake_primitives::receipts::ActionMetaDataExt;
 
 const CONTRACT_ID: &str = "social.near";
 
