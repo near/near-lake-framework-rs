@@ -10,7 +10,8 @@ use regex::Regex;
 
 use once_cell::sync::Lazy;
 
-static RE: Lazy<regex::Regex> = Lazy::new(|| Regex::new(r"^*.mintbase\d+.near$").unwrap());
+static MINTBASE_STORE_REGEXP: Lazy<regex::Regex> =
+    Lazy::new(|| Regex::new(r"^*.mintbase\d+.near$").unwrap());
 
 fn main() -> anyhow::Result<()> {
     eprintln!("Starting...");
@@ -30,6 +31,7 @@ async fn handle_block(
     let nfts: Vec<NFTReceipt> = block
         .events() // fetching all the events that occurred in the block
         .iter()
+        .filter(|event| event.standard() == "nep171")
         .filter(|event| event.event() == "nft_mint") // filter them by "nft_mint" event only
         .filter_map(|event| parse_event(event))
         .collect();
@@ -66,7 +68,7 @@ async fn handle_block(
 /// be parsed.
 fn parse_event(event: &near_lake_primitives::events::Event) -> Option<NFTReceipt> {
     let marketplace = {
-        if RE.is_match(event.related_receipt_receiver_id().as_str()) {
+        if MINTBASE_STORE_REGEXP.is_match(event.related_receipt_receiver_id().as_str()) {
             Marketplace::Mintbase
         } else if event.related_receipt_receiver_id().as_str() == "x.paras.near" {
             Marketplace::Paras
@@ -75,15 +77,18 @@ fn parse_event(event: &near_lake_primitives::events::Event) -> Option<NFTReceipt
         }
     };
 
-    if let Some(nft) = marketplace.convert_event_data_to_nfts(
-        event.data(),
-        event.related_receipt_receiver_id().to_string(),
-    ) {
-        Some(NFTReceipt {
-            receipt_id: event.related_receipt_id().to_string(),
-            marketplace_name: marketplace.name(),
-            nfts: vec![nft],
-        })
+    if let Some(event_data) = event.data() {
+        if let Some(nfts) =
+            marketplace.convert_event_data_to_nfts(event_data, event.related_receipt_receiver_id())
+        {
+            Some(NFTReceipt {
+                receipt_id: event.related_receipt_id().to_string(),
+                marketplace_name: marketplace.name(),
+                nfts,
+            })
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -105,57 +110,63 @@ impl Marketplace {
     }
     fn convert_event_data_to_nfts(
         &self,
-        event_data: Option<serde_json::Value>,
-        receiver_id: String,
-    ) -> Option<NFT> {
+        event_data: serde_json::Value,
+        receiver_id: &near_lake_primitives::near_primitives::types::AccountId,
+    ) -> Option<Vec<NFT>> {
         match self {
-            Self::Mintbase => self.mintbase(event_data, receiver_id),
-            Self::Paras => self.paras(event_data, receiver_id),
-            Self::Unknown => self.unknown(event_data),
+            Self::Mintbase => Some(self.mintbase(event_data, receiver_id)),
+            Self::Paras => Some(self.paras(event_data, receiver_id)),
+            Self::Unknown => None,
         }
     }
 
-    fn paras(&self, event_data: Option<serde_json::Value>, receiver_id: String) -> Option<NFT> {
-        if let Some(data) = event_data {
-            let paras_event_data = serde_json::from_value::<Vec<ParasEventData>>(data).unwrap();
-            Some(NFT {
-                owner: paras_event_data[0].owner_id.clone(),
-                links: paras_event_data[0]
+    fn paras(
+        &self,
+        event_data: serde_json::Value,
+        receiver_id: &near_lake_primitives::near_primitives::types::AccountId,
+    ) -> Vec<NFT> {
+        let paras_event_data = serde_json::from_value::<Vec<NftMintLog>>(event_data)
+            .expect("Failed to parse NftMintLog");
+
+        paras_event_data
+            .iter()
+            .map(|nft_mint_log| NFT {
+                owner: nft_mint_log.owner_id.clone(),
+                links: nft_mint_log
                     .token_ids
                     .iter()
                     .map(|token_id| {
                         format!(
                             "https://paras.id/token/{}::{}/{}",
-                            receiver_id,
+                            receiver_id.to_string(),
                             token_id.split(":").collect::<Vec<&str>>()[0],
                             token_id,
                         )
                     })
                     .collect(),
             })
-        } else {
-            None
-        }
+            .collect()
     }
 
-    fn mintbase(&self, event_data: Option<serde_json::Value>, receiver_id: String) -> Option<NFT> {
-        if let Some(data) = event_data {
-            let mintbase_event_data =
-                serde_json::from_value::<Vec<MintbaseEventData>>(data).unwrap();
-            Some(NFT {
-                owner: mintbase_event_data[0].owner_id.clone(),
+    fn mintbase(
+        &self,
+        event_data: serde_json::Value,
+        receiver_id: &near_lake_primitives::near_primitives::types::AccountId,
+    ) -> Vec<NFT> {
+        let mintbase_event_data = serde_json::from_value::<Vec<NftMintLog>>(event_data)
+            .expect("Failed to parse NftMintLog");
+
+        mintbase_event_data
+            .iter()
+            .map(|nft_mint_log| NFT {
+                owner: nft_mint_log.owner_id.clone(),
                 links: vec![format!(
                     "https://mintbase.io/contract/{}/token/{}",
-                    receiver_id, mintbase_event_data[0].token_ids[0]
+                    receiver_id.to_string(),
+                    nft_mint_log.token_ids[0]
                 )],
             })
-        } else {
-            None
-        }
-    }
-
-    fn unknown(&self, _event_data: Option<serde_json::Value>) -> Option<NFT> {
-        None
+            .collect()
     }
 }
 
@@ -179,13 +190,9 @@ struct NFT {
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct ParasEventData {
+struct NftMintLog {
     owner_id: String,
     token_ids: Vec<String>,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct MintbaseEventData {
-    owner_id: String,
-    token_ids: Vec<String>,
+    // There is also a `memo` field, but it is not used in this example
+    // memo: Option<String>,
 }

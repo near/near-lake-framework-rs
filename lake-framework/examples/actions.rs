@@ -30,7 +30,7 @@ async fn print_function_calls_to_my_account(
         .collect();
 
     if !actions.is_empty() {
-        eprintln!("Block #{:?}\n{:#?}", block_height, actions,);
+        println!("Block #{:?}\n{:#?}", block_height, actions);
     }
 
     Ok(())
