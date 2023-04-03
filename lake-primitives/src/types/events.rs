@@ -11,24 +11,24 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn event(&self) -> String {
-        self.raw_event.event.clone()
+    pub fn event(&self) -> &str {
+        &self.raw_event.event
     }
 
-    pub fn standard(&self) -> String {
-        self.raw_event.standard.clone()
+    pub fn standard(&self) -> &str {
+        &self.raw_event.standard
     }
 
-    pub fn version(&self) -> String {
-        self.raw_event.version.clone()
+    pub fn version(&self) -> &str {
+        &self.raw_event.version
     }
 
-    pub fn data(&self) -> Option<serde_json::Value> {
-        self.raw_event.data.clone()
+    pub fn data(&self) -> Option<&serde_json::Value> {
+        self.raw_event.data.as_ref()
     }
 
-    pub fn related_receipt_id(&self) -> &crate::CryptoHash {
-        &self.related_receipt_id
+    pub fn related_receipt_id(&self) -> crate::CryptoHash {
+        self.related_receipt_id
     }
 
     pub fn related_receipt_receiver_id(&self) -> &AccountId {
@@ -39,9 +39,9 @@ impl Event {
         &self.predecessor_id
     }
 
-    // checks it predecessor_id or receiver_id is equal to the given account_id
-    pub fn is_related_to(&self, account_id: &AccountId) -> bool {
-        &self.receiver_id == account_id || &self.predecessor_id == account_id
+    /// Returns true if the event is produced by the given contract id.
+    pub fn is_emitted_by_contract(&self, contract_account_id: &AccountId) -> bool {
+        &self.receiver_id == contract_account_id
     }
 }
 

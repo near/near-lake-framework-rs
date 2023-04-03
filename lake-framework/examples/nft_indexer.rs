@@ -30,7 +30,6 @@ async fn handle_block(
     // Indexing lines START
     let nfts: Vec<NFTReceipt> = block
         .events() // fetching all the events that occurred in the block
-        .iter()
         .filter(|event| event.standard() == "nep171")
         .filter(|event| event.event() == "nft_mint") // filter them by "nft_mint" event only
         .filter_map(|event| parse_event(event))
@@ -78,8 +77,8 @@ fn parse_event(event: &near_lake_primitives::events::Event) -> Option<NFTReceipt
     };
 
     if let Some(event_data) = event.data() {
-        if let Some(nfts) =
-            marketplace.convert_event_data_to_nfts(event_data, event.related_receipt_receiver_id())
+        if let Some(nfts) = marketplace
+            .convert_event_data_to_nfts(event_data.clone(), event.related_receipt_receiver_id())
         {
             Some(NFTReceipt {
                 receipt_id: event.related_receipt_id().to_string(),

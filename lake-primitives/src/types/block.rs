@@ -38,7 +38,7 @@ impl Block {
         (&self.streamer_message).into()
     }
 
-    pub fn receipts(&mut self) -> &[receipts::Receipt] {
+    pub fn receipts(&mut self) -> impl Iterator<Item = &receipts::Receipt> {
         if self.executed_receipts.is_empty() {
             self.executed_receipts = self
                 .streamer_message
@@ -48,24 +48,30 @@ impl Block {
                 .map(Into::into)
                 .collect();
         }
-        &self.executed_receipts
+        self.executed_receipts.iter()
     }
 
-    pub fn postponed_receipts(&mut self) -> &[receipts::Receipt] {
+    pub fn postponed_receipts(&mut self) -> impl Iterator<Item = &receipts::Receipt> {
         if self.postponed_receipts.is_empty() {
+            let executed_receipts_ids: Vec<_> = self
+                .receipts()
+                .map(|receipt| receipt.receipt_id())
+                .collect();
             self.postponed_receipts = self
                 .streamer_message
                 .shards
                 .iter()
                 .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.receipts.iter()))
                 .flatten()
+                // exclude receipts that are already executed
+                .filter(|receipt| !executed_receipts_ids.contains(&receipt.receipt_id))
                 .map(Into::into)
                 .collect();
         }
-        &self.postponed_receipts
+        self.postponed_receipts.iter()
     }
 
-    pub fn transactions(&mut self) -> &[transactions::Transaction] {
+    pub fn transactions(&mut self) -> impl Iterator<Item = &transactions::Transaction> {
         if self.transactions.is_empty() {
             self.transactions = self
                 .streamer_message
@@ -77,10 +83,10 @@ impl Block {
                 .filter_map(|transactions| transactions.ok())
                 .collect();
         }
-        &self.transactions
+        self.transactions.iter()
     }
 
-    pub fn actions_from_streamer_message(&self) -> Vec<receipts::Action> {
+    fn actions_from_streamer_message(&self) -> Vec<receipts::Action> {
         self.streamer_message()
             .shards
             .iter()
@@ -92,21 +98,21 @@ impl Block {
             .collect()
     }
 
-    pub fn actions(&mut self) -> std::slice::Iter<'_, receipts::Action> {
+    pub fn actions(&mut self) -> impl Iterator<Item = &receipts::Action> {
         if self.actions.is_empty() {
-            self.actions = self.actions_from_streamer_message();
+            self.build_actions_cache();
         }
         self.actions.iter()
     }
 
-    pub fn events(&mut self) -> Vec<&events::Event> {
+    pub fn events(&mut self) -> impl Iterator<Item = &events::Event> {
         if self.events.is_empty() {
             self.build_events_hashmap();
         }
-        self.events.values().flatten().collect()
+        self.events.values().flatten()
     }
 
-    pub fn state_changes(&mut self) -> &[state_changes::StateChange] {
+    pub fn state_changes(&mut self) -> impl Iterator<Item = &state_changes::StateChange> {
         if self.state_changes.is_empty() {
             self.state_changes = self
                 .streamer_message
@@ -116,20 +122,15 @@ impl Block {
                 .map(Into::into)
                 .collect();
         }
-        &self.state_changes
+        self.state_changes.iter()
     }
 
-    pub fn actions_by_receipt_id(
-        &mut self,
-        receipt_id: &super::ReceiptId,
-    ) -> Vec<&receipts::Action> {
-        if self.actions.is_empty() {
-            self.build_actions_cache();
-        }
-        self.actions
-            .iter()
-            .filter(|action| &action.receipt_id() == receipt_id)
-            .collect()
+    pub fn actions_by_receipt_id<'a>(
+        &'a mut self,
+        receipt_id: &'a super::ReceiptId,
+    ) -> impl Iterator<Item = &receipts::Action> + 'a {
+        self.actions()
+            .filter(move |action| &action.receipt_id() == receipt_id)
     }
 
     pub fn events_by_receipt_id(&mut self, receipt_id: &super::ReceiptId) -> Vec<events::Event> {
@@ -143,21 +144,16 @@ impl Block {
         }
     }
 
-    pub fn events_by_account_id(
-        mut self,
-        account_id: crate::near_indexer_primitives::types::AccountId,
-    ) -> Vec<events::Event> {
+    pub fn events_by_contract_id<'a>(
+        &'a mut self,
+        account_id: &'a crate::near_indexer_primitives::types::AccountId,
+    ) -> impl Iterator<Item = &events::Event> + 'a {
         self.events()
-            .iter()
-            .cloned()
-            .filter(|event| event.is_related_to(&account_id))
-            .map(Clone::clone)
-            .collect()
+            .filter(move |event| event.is_emitted_by_contract(&account_id.clone()))
     }
 
     pub fn receipt_by_id(&mut self, receipt_id: &super::ReceiptId) -> Option<&receipts::Receipt> {
         self.receipts()
-            .iter()
             .find(|receipt| &receipt.receipt_id() == receipt_id)
     }
 }
@@ -170,7 +166,6 @@ impl Block {
     fn build_events_hashmap(&mut self) {
         self.events = self
             .receipts()
-            .iter()
             .map(|receipt| (receipt.receipt_id(), receipt.events()))
             .collect();
     }

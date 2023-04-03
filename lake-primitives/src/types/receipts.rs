@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::near_indexer_primitives::{
     near_primitives,
     types::{AccountId, Balance, Gas},
-    views, CryptoHash, IndexerExecutionOutcomeWithReceipt,
+    views, CryptoHash, IndexerExecutionOutcomeWithReceipt, IndexerTransactionWithOutcome,
 };
 use near_crypto::{PublicKey, Signature};
 
@@ -224,6 +224,27 @@ impl Action {
     impl_as_action_for!(DeleteAccount);
     impl_as_action_for!(Delegate);
 }
+
+// Macro to implement ActionMetaDataExt trait for each Action variant.
+macro_rules! impl_action_metadata_ext {
+    ($action:ident) => {
+        impl ActionMetaDataExt for $action {
+            fn metadata(&self) -> &ActionMetadata {
+                &self.metadata
+            }
+        }
+    };
+}
+
+impl_action_metadata_ext!(CreateAccount);
+impl_action_metadata_ext!(DeployContract);
+impl_action_metadata_ext!(FunctionCall);
+impl_action_metadata_ext!(Transfer);
+impl_action_metadata_ext!(Stake);
+impl_action_metadata_ext!(AddKey);
+impl_action_metadata_ext!(DeleteKey);
+impl_action_metadata_ext!(DeleteAccount);
+impl_action_metadata_ext!(Delegate);
 
 #[derive(Debug, Clone)]
 pub struct CreateAccount {
@@ -462,7 +483,7 @@ impl Action {
                         delegate_action,
                         signature,
                     } => {
-                        let delegate_action_kind =
+                        let delegate_actions =
                             Self::try_from_delegate_action(delegate_action, metadata.clone())?
                                 .into_iter()
                                 .map(TryInto::try_into)
@@ -470,7 +491,7 @@ impl Action {
 
                         Self::Delegate(Delegate {
                             metadata: metadata.clone(),
-                            delegate_action: delegate_action_kind,
+                            delegate_action: delegate_actions,
                             signature: signature.clone(),
                         })
                     }
@@ -490,11 +511,11 @@ impl Action {
     ) -> Result<Vec<Self>, &'static str> {
         let mut actions = Vec::with_capacity(delegate_action.actions.len());
 
-        for action in delegate_action.clone().actions {
-            let action_kind = match views::ActionView::from(
+        for nearcore_action in delegate_action.clone().actions {
+            let action = match views::ActionView::from(
                 <near_primitives::delegate_action::NonDelegateAction as Into<
                     near_primitives::transaction::Action,
-                >>::into(action),
+                >>::into(nearcore_action),
             ) {
                 views::ActionView::CreateAccount => Self::CreateAccount(CreateAccount {
                     metadata: metadata.clone(),
@@ -544,33 +565,102 @@ impl Action {
                         beneficiary_id,
                     })
                 }
-                views::ActionView::Delegate { .. } => {
-                    return Err("Cannot delegate DelegateAction variant")
-                }
+                _ => return Err("Cannot delegate DelegateAction"),
             };
-            actions.push(action_kind);
+            actions.push(action);
         }
         Ok(actions)
     }
-}
 
-// Macro to implement Action trait for each ActionKind variant.
-macro_rules! impl_action_metadata_ext {
-    ($action:ident) => {
-        impl ActionMetaDataExt for $action {
-            fn metadata(&self) -> &ActionMetadata {
-                &self.metadata
-            }
+    // Tries to convert a IndexerTransactionWithOutcome to a Vec<Action>
+    pub fn try_vec_from_transaction_outcome(
+        transaction_with_outcome: &IndexerTransactionWithOutcome,
+    ) -> Result<Vec<Self>, &'static str> {
+        let metadata = ActionMetadata {
+            receipt_id: *transaction_with_outcome
+                .outcome
+                .execution_outcome
+                .outcome
+                .receipt_ids
+                .get(0)
+                .ok_or("Transaction conversion ReceiptId is missing")?,
+            predecessor_id: transaction_with_outcome.transaction.signer_id.clone(),
+            receiver_id: transaction_with_outcome.transaction.receiver_id.clone(),
+            signer_id: transaction_with_outcome.transaction.signer_id.clone(),
+            signer_public_key: transaction_with_outcome.transaction.public_key.clone(),
+        };
+
+        let mut actions: Vec<Self> = vec![];
+
+        for nearcore_action in &transaction_with_outcome.transaction.actions {
+            let action = match nearcore_action {
+                views::ActionView::CreateAccount => Self::CreateAccount(CreateAccount {
+                    metadata: metadata.clone(),
+                }),
+                views::ActionView::DeployContract { code } => {
+                    Self::DeployContract(DeployContract {
+                        metadata: metadata.clone(),
+                        code: code.to_vec(),
+                    })
+                }
+                views::ActionView::FunctionCall {
+                    method_name,
+                    args,
+                    gas,
+                    deposit,
+                } => Self::FunctionCall(FunctionCall {
+                    metadata: metadata.clone(),
+                    method_name: method_name.to_string(),
+                    args: args.to_vec(),
+                    gas: *gas,
+                    deposit: *deposit,
+                }),
+                views::ActionView::Transfer { deposit } => Self::Transfer(Transfer {
+                    metadata: metadata.clone(),
+                    deposit: *deposit,
+                }),
+                views::ActionView::Stake { stake, public_key } => Self::Stake(Stake {
+                    metadata: metadata.clone(),
+                    stake: *stake,
+                    public_key: public_key.clone(),
+                }),
+                views::ActionView::AddKey {
+                    public_key,
+                    access_key,
+                } => Self::AddKey(AddKey {
+                    metadata: metadata.clone(),
+                    public_key: public_key.clone(),
+                    access_key: access_key.clone(),
+                }),
+                views::ActionView::DeleteKey { public_key } => Self::DeleteKey(DeleteKey {
+                    metadata: metadata.clone(),
+                    public_key: public_key.clone(),
+                }),
+                views::ActionView::DeleteAccount { beneficiary_id } => {
+                    Self::DeleteAccount(DeleteAccount {
+                        metadata: metadata.clone(),
+                        beneficiary_id: beneficiary_id.clone(),
+                    })
+                }
+                views::ActionView::Delegate {
+                    delegate_action,
+                    signature,
+                } => Self::Delegate(Delegate {
+                    metadata: metadata.clone(),
+                    delegate_action: Self::try_from_delegate_action(
+                        delegate_action,
+                        metadata.clone(),
+                    )?
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<Vec<DelegateAction>, &str>>()?,
+                    signature: signature.clone(),
+                }),
+            };
+
+            actions.push(action);
         }
-    };
-}
 
-impl_action_metadata_ext!(CreateAccount);
-impl_action_metadata_ext!(DeployContract);
-impl_action_metadata_ext!(FunctionCall);
-impl_action_metadata_ext!(Transfer);
-impl_action_metadata_ext!(Stake);
-impl_action_metadata_ext!(AddKey);
-impl_action_metadata_ext!(DeleteKey);
-impl_action_metadata_ext!(DeleteAccount);
-impl_action_metadata_ext!(Delegate);
+        Ok(actions)
+    }
+}
