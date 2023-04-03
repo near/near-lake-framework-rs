@@ -101,6 +101,7 @@ impl From<&views::ReceiptEnumView> for ReceiptKind {
 pub enum ExecutionStatus {
     SuccessValue(Vec<u8>),
     SuccessReceiptId(CryptoHash),
+    // TODO: handle the Failure and all the nested errors it has
     Failure(String),
     Postponed,
 }
@@ -114,6 +115,7 @@ impl From<&views::ExecutionStatusView> for ExecutionStatus {
                 Self::SuccessReceiptId(*receipt_id)
             }
             views::ExecutionStatusView::Failure(tx_execution_error) => {
+                // TODO: handle the Failure and all the nested errors it has instead of stringifying
                 Self::Failure(tx_execution_error.to_string())
             }
         }
