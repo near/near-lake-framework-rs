@@ -1,6 +1,6 @@
 pub mod actions;
 pub mod block;
-mod delegate_actions;
+pub mod delegate_actions;
 pub mod events;
 mod impl_actions;
 pub mod receipts;
