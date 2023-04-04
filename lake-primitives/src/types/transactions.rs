@@ -12,7 +12,7 @@ pub struct Transaction {
     receiver_id: AccountId,
     status: ExecutionStatus,
     execution_outcome_id: CryptoHash,
-    actions: Vec<super::receipts::Action>,
+    actions: Vec<super::actions::Action>,
 }
 
 impl Transaction {
@@ -44,7 +44,7 @@ impl Transaction {
         self.execution_outcome_id
     }
 
-    pub fn actions_included(&self) -> impl Iterator<Item = &super::receipts::Action> {
+    pub fn actions_included(&self) -> impl Iterator<Item = &super::actions::Action> {
         self.actions.iter()
     }
 }
@@ -61,7 +61,7 @@ impl TryFrom<&IndexerTransactionWithOutcome> for Transaction {
             receiver_id: tx_with_outcome.transaction.receiver_id.clone(),
             execution_outcome_id: tx_with_outcome.outcome.execution_outcome.id,
             status: (&tx_with_outcome.outcome.execution_outcome.outcome.status).into(),
-            actions: super::receipts::Action::try_vec_from_transaction_outcome(tx_with_outcome)?,
+            actions: super::actions::Action::try_vec_from_transaction_outcome(tx_with_outcome)?,
         })
     }
 }

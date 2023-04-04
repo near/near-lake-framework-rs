@@ -3,7 +3,7 @@
 //! It is going to follow the NEAR Social contract and print all function calls to it.
 use near_lake_framework::near_lake_primitives;
 // We need to import this trait to use the `as_function_call` method.
-use near_lake_primitives::receipts::ActionMetaDataExt;
+use near_lake_primitives::actions::ActionMetaDataExt;
 
 const CONTRACT_ID: &str = "social.near";
 
@@ -22,7 +22,7 @@ async fn print_function_calls_to_my_account(
     _ctx: near_lake_framework::LakeContext,
 ) -> anyhow::Result<()> {
     let block_height = block.block_height();
-    let actions: Vec<&near_lake_primitives::receipts::FunctionCall> = block
+    let actions: Vec<&near_lake_primitives::actions::FunctionCall> = block
         .actions()
         .filter(|action| action.receiver_id().as_str() == CONTRACT_ID)
         .filter_map(|action| action.as_function_call())
