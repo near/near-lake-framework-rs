@@ -2,24 +2,6 @@ use near_indexer_primitives::{views, IndexerTransactionWithOutcome};
 
 use crate::actions::{Action, ActionMetadata, DelegateAction};
 
-// impl TryFrom<Action> for DelegateAction {
-//     type Error = &'static str;
-
-//     fn try_from(action: Action) -> Result<Self, Self::Error> {
-//         match action {
-//             Action::CreateAccount(ca) => Ok(Self::CreateAccount(ca)),
-//             Action::DeployContract(dc) => Ok(Self::DeployContract(dc)),
-//             Action::FunctionCall(fc) => Ok(Self::FunctionCall(fc)),
-//             Action::Transfer(t) => Ok(Self::Transfer(t)),
-//             Action::Stake(s) => Ok(Self::Stake(s)),
-//             Action::AddKey(ak) => Ok(Self::AddKey(ak)),
-//             Action::DeleteKey(dk) => Ok(Self::DeleteKey(dk)),
-//             Action::DeleteAccount(da) => Ok(Self::DeleteAccount(da)),
-//             Action::Delegate(_) => Err("Cannot convert DelegateAction to DelegateAction"),
-//         }
-//     }
-// }
-
 impl Action {
     // Tries to convert a &ReceiptView into a vector of Action.
     pub fn try_vec_from_receipt_view(

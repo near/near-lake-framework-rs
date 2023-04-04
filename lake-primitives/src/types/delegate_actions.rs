@@ -180,7 +180,7 @@ impl DelegateDeleteAccount {
 }
 
 impl DelegateAction {
-    // Tries to convert a near_primitives::delegate_action::DelegateAction into a vector of Action.
+    // Tries to convert a near_primitives::delegate_action::DelegateAction into a Vec<DelegateAction>.
     pub fn try_from_delegate_action(
         delegate_action: &near_primitives::delegate_action::DelegateAction,
     ) -> Result<Vec<Self>, &'static str> {
