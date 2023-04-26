@@ -1,6 +1,6 @@
 use near_crypto::{PublicKey, Signature};
 
-use super::receipts::{ExecutionStatus, Operation};
+use super::receipts::ExecutionStatus;
 use crate::near_indexer_primitives::{types::AccountId, CryptoHash, IndexerTransactionWithOutcome};
 
 #[derive(Debug, Clone)]
@@ -12,46 +12,48 @@ pub struct Transaction {
     receiver_id: AccountId,
     status: ExecutionStatus,
     execution_outcome_id: CryptoHash,
-    operations: Vec<Operation>,
+    actions: Vec<super::actions::Action>,
 }
 
 impl Transaction {
     pub fn transaction_hash(&self) -> CryptoHash {
-        self.transaction_hash.clone()
+        self.transaction_hash
     }
 
-    pub fn signer_id(&self) -> AccountId {
-        self.signer_id.clone()
+    pub fn signer_id(&self) -> &AccountId {
+        &self.signer_id
     }
 
-    pub fn signer_public_key(&self) -> PublicKey {
-        self.signer_public_key.clone()
+    pub fn signer_public_key(&self) -> &PublicKey {
+        &self.signer_public_key
     }
 
-    pub fn signature(&self) -> Signature {
-        self.signature.clone()
+    pub fn signature(&self) -> &Signature {
+        &self.signature
     }
 
-    pub fn receiver_id(&self) -> AccountId {
-        self.receiver_id.clone()
+    pub fn receiver_id(&self) -> &AccountId {
+        &self.receiver_id
     }
 
-    pub fn status(&self) -> ExecutionStatus {
-        self.status.clone()
+    pub fn status(&self) -> &ExecutionStatus {
+        &self.status
     }
 
     pub fn execution_outcome_id(&self) -> CryptoHash {
-        self.execution_outcome_id.clone()
+        self.execution_outcome_id
     }
 
-    pub fn operations(&self) -> Vec<Operation> {
-        self.operations.clone()
+    pub fn actions_included(&self) -> impl Iterator<Item = &super::actions::Action> {
+        self.actions.iter()
     }
 }
 
-impl From<&IndexerTransactionWithOutcome> for Transaction {
-    fn from(tx_with_outcome: &IndexerTransactionWithOutcome) -> Self {
-        Self {
+impl TryFrom<&IndexerTransactionWithOutcome> for Transaction {
+    type Error = &'static str;
+
+    fn try_from(tx_with_outcome: &IndexerTransactionWithOutcome) -> Result<Self, Self::Error> {
+        Ok(Self {
             transaction_hash: tx_with_outcome.transaction.hash,
             signer_id: tx_with_outcome.transaction.signer_id.clone(),
             signer_public_key: tx_with_outcome.transaction.public_key.clone(),
@@ -59,12 +61,7 @@ impl From<&IndexerTransactionWithOutcome> for Transaction {
             receiver_id: tx_with_outcome.transaction.receiver_id.clone(),
             execution_outcome_id: tx_with_outcome.outcome.execution_outcome.id,
             status: (&tx_with_outcome.outcome.execution_outcome.outcome.status).into(),
-            operations: tx_with_outcome
-                .transaction
-                .actions
-                .iter()
-                .map(Into::into)
-                .collect(),
-        }
+            actions: super::actions::Action::try_vec_from_transaction_outcome(tx_with_outcome)?,
+        })
     }
 }
