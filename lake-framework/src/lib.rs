@@ -18,19 +18,62 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
 ///```no_run
 ///# fn main() -> anyhow::Result<()> {
+///    struct MyContext {
+///        pub my_field: String,
+///    }
+///
+///    let context = MyContext {
+///       my_field: "my_value".to_string(),
+///    };
+///
 ///    near_lake_framework::LakeBuilder::default()
 ///        .testnet()
 ///        .start_block_height(112205773)
 ///        .build()?
-///        .run(handle_block)
+///        .run_with_context(handle_block, &context)
 ///# }
 ///
-/// # async fn handle_block(_block: near_lake_primitives::block::Block, _context: near_lake_framework::LakeContext) -> anyhow::Result<()> { Ok(()) }
+/// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
 ///```
 impl types::Lake {
+    pub fn run_with_context<'context, C, Fut>(
+        self,
+        f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
+        context: &'context C,
+    ) -> anyhow::Result<()>
+    where
+        Fut: Future<Output = anyhow::Result<()>>,
+    {
+        let runtime = tokio::runtime::Runtime::new()?;
+
+        runtime.block_on(async move {
+            // instantiate the NEAR Lake Framework Stream
+            let (sender, stream) = streamer::streamer(self);
+
+            // read the stream events and pass them to a handler function with
+            // concurrency 1
+            let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
+                .map(|streamer_message| async {
+                    let block: near_lake_primitives::block::Block = streamer_message.into();
+                    f(block, &context).await
+                })
+                .buffer_unordered(1usize);
+
+            while let Some(_handle_message) = handlers.next().await {}
+            drop(handlers); // close the channel so the sender will stop
+
+            // propagate errors from the sender
+            match sender.await {
+                Ok(Ok(())) => Ok(()),
+                Ok(Err(e)) => Err(e),
+                Err(e) => Err(anyhow::Error::from(e)), // JoinError
+            }
+        })
+    }
+
     pub fn run<Fut>(
         self,
-        f: impl Fn(near_lake_primitives::block::Block, near_lake_primitives::LakeContext) -> Fut,
+        f: impl Fn(near_lake_primitives::block::Block) -> Fut,
     ) -> anyhow::Result<()>
     where
         Fut: Future<Output = anyhow::Result<()>>,
@@ -48,9 +91,8 @@ impl types::Lake {
             // concurrency 1
             let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
                 .map(|streamer_message| async {
-                    let context = LakeContext {};
                     let block: near_lake_primitives::block::Block = streamer_message.into();
-                    f(block, context).await
+                    f(block).await
                 })
                 .buffer_unordered(concurrency);
 
