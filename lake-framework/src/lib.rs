@@ -78,33 +78,6 @@ impl types::Lake {
     where
         Fut: Future<Output = anyhow::Result<()>>,
     {
-        let runtime = tokio::runtime::Runtime::new()?;
-
-        runtime.block_on(async {
-            // capture the concurrency value before it moves into the streamer
-            let concurrency = self.concurrency;
-
-            // instantiate the NEAR Lake Framework Stream
-            let (sender, stream) = streamer::streamer(self);
-
-            // read the stream events and pass them to a handler function with
-            // concurrency 1
-            let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
-                .map(|streamer_message| async {
-                    let block: near_lake_primitives::block::Block = streamer_message.into();
-                    f(block).await
-                })
-                .buffer_unordered(concurrency);
-
-            while let Some(_handle_message) = handlers.next().await {}
-            drop(handlers); // close the channel so the sender will stop
-
-            // propagate errors from the sender
-            match sender.await {
-                Ok(Ok(())) => Ok(()),
-                Ok(Err(e)) => Err(e),
-                Err(e) => Err(anyhow::Error::from(e)), // JoinError
-            }
-        })
+        self.run_with_context(|block, _context| f(block), &())
     }
 }
