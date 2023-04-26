@@ -23,10 +23,7 @@ fn main() -> anyhow::Result<()> {
         .run(handle_block) // developer-defined async function that handles each block
 }
 
-async fn handle_block(
-    mut block: near_lake_primitives::block::Block,
-    _ctx: near_lake_framework::LakeContext,
-) -> anyhow::Result<()> {
+async fn handle_block(mut block: near_lake_primitives::block::Block) -> anyhow::Result<()> {
     // Indexing lines START
     let nfts: Vec<NFTReceipt> = block
         .events() // fetching all the events that occurred in the block
