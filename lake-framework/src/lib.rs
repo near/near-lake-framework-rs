@@ -7,7 +7,7 @@ use futures::{Future, StreamExt};
 pub use near_lake_primitives::{self, near_indexer_primitives, LakeContext};
 
 pub use aws_credential_types::Credentials;
-pub use types::{Lake, LakeBuilder};
+pub use types::{Lake, LakeBuilder, LakeError};
 
 mod s3_fetchers;
 mod streamer;
@@ -31,20 +31,23 @@ impl types::Lake {
     ///        .testnet()
     ///        .start_block_height(112205773)
     ///        .build()?
-    ///        .run_with_context(handle_block, &context)
+    ///        .run_with_context(handle_block, &context)?;
+    ///    Ok(())
     ///# }
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
     ///```
-    pub fn run_with_context<'context, C, Fut>(
+    pub fn run_with_context<'context, C, E, Fut>(
         self,
         f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
         context: &'context C,
-    ) -> anyhow::Result<()>
+    ) -> Result<(), LakeError>
     where
-        Fut: Future<Output = anyhow::Result<()>>,
+        Fut: Future<Output = Result<(), E>>,
+        E: Into<Box<dyn std::error::Error>>,
     {
-        let runtime = tokio::runtime::Runtime::new()?;
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|err| LakeError::RuntimeStartError { error: err })?;
 
         runtime.block_on(async move {
             // instantiate the NEAR Lake Framework Stream
@@ -65,8 +68,8 @@ impl types::Lake {
             // propagate errors from the sender
             match sender.await {
                 Ok(Ok(())) => Ok(()),
-                Ok(Err(e)) => Err(e),
-                Err(e) => Err(anyhow::Error::from(e)), // JoinError
+                Ok(Err(err)) => Err(err),
+                Err(err) => Err(err.into()), // JoinError
             }
         })
     }
@@ -78,17 +81,19 @@ impl types::Lake {
     ///        .testnet()
     ///        .start_block_height(112205773)
     ///        .build()?
-    ///        .run(handle_block)
+    ///        .run(handle_block)?;
+    ///    Ok(())
     ///# }
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block) -> anyhow::Result<()> { Ok(()) }
     ///```
-    pub fn run<Fut>(
+    pub fn run<Fut, E>(
         self,
         f: impl Fn(near_lake_primitives::block::Block) -> Fut,
-    ) -> anyhow::Result<()>
+    ) -> Result<(), LakeError>
     where
-        Fut: Future<Output = anyhow::Result<()>>,
+        Fut: Future<Output = Result<(), E>>,
+        E: Into<Box<dyn std::error::Error>>,
     {
         self.run_with_context(|block, _context| f(block), &())
     }

@@ -12,7 +12,8 @@ fn main() -> anyhow::Result<()> {
         .testnet()
         .start_block_height(112205773)
         .build()?
-        .run(handle_block)
+        .run(handle_block)?;
+    Ok(())
 }
 
 // The handler function to take the `Block`
@@ -45,7 +46,9 @@ fn main() -> anyhow::Result<()> {
         .testnet()
         .start_block_height(112205773)
         .build()?
-        .run_with_context(handle_block, &context)
+        .run_with_context(handle_block, &context)?;
+
+    Ok(())
 }
 
 // The handler function to take the `Block`
