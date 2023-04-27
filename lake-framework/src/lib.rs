@@ -31,7 +31,8 @@ impl types::Lake {
     ///        .testnet()
     ///        .start_block_height(112205773)
     ///        .build()?
-    ///        .run_with_context(handle_block, &context)
+    ///        .run_with_context(handle_block, &context)?;
+    ///    Ok(())
     ///# }
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
@@ -80,7 +81,8 @@ impl types::Lake {
     ///        .testnet()
     ///        .start_block_height(112205773)
     ///        .build()?
-    ///        .run(handle_block)
+    ///        .run(handle_block)?;
+    ///    Ok(())
     ///# }
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block) -> anyhow::Result<()> { Ok(()) }

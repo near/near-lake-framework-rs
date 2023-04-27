@@ -40,7 +40,8 @@ fn main() -> anyhow::Result<()> {
         .start_block_height(88444526)
         .build()?
         // developer-defined async function that handles each block
-        .run_with_context(print_function_calls_to_my_account, &context)
+        .run_with_context(print_function_calls_to_my_account, &context)?;
+    Ok(())
 }
 
 async fn print_function_calls_to_my_account(
