@@ -50,8 +50,18 @@ pub struct Lake {
     /// ```
     #[builder(setter(strip_option), default)]
     pub(crate) s3_config: Option<aws_sdk_s3::config::Config>,
+    /// Defines how many *block heights* Lake Framework will try to preload into memory to avoid S3 `List` requests.
+    /// Default: 100
+    ///
+    /// *Note*: This value is not the number of blocks to preload, but the number of block heights.
+    /// Also, this value doesn't affect your indexer much if it follows the tip of the network.
+    /// This parameter is useful for historical indexing.
     #[builder(default = "100")]
     pub(crate) blocks_preload_pool_size: usize,
+    /// Number of concurrent blocks to process. Default: 1
+    /// **WARNING**: Increase this value only if your block handling logic doesn't have to rely on previous blocks and can be processed in parallel
+    #[builder(default = "1")]
+    pub(crate) concurrency: usize,
 }
 
 impl LakeBuilder {
