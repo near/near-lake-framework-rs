@@ -15,27 +15,27 @@ pub(crate) mod types;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 
-/// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
-///```no_run
-///# fn main() -> anyhow::Result<()> {
-///    struct MyContext {
-///        pub my_field: String,
-///    }
-///
-///    let context = MyContext {
-///       my_field: "my_value".to_string(),
-///    };
-///
-///    near_lake_framework::LakeBuilder::default()
-///        .testnet()
-///        .start_block_height(112205773)
-///        .build()?
-///        .run_with_context(handle_block, &context)
-///# }
-///
-/// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
-///```
 impl types::Lake {
+    /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
+    ///```no_run
+    ///  struct MyContext {
+    ///      my_field: String,
+    ///  }
+    ///# fn main() -> anyhow::Result<()> {
+    ///
+    ///    let context = MyContext {
+    ///       my_field: "my_value".to_string(),
+    ///    };
+    ///
+    ///    near_lake_framework::LakeBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(112205773)
+    ///        .build()?
+    ///        .run_with_context(handle_block, &context)
+    ///# }
+    ///
+    /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
+    ///```
     pub fn run_with_context<'context, C, Fut>(
         self,
         f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
@@ -71,6 +71,18 @@ impl types::Lake {
         })
     }
 
+    /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
+    ///```no_run
+    ///# fn main() -> anyhow::Result<()> {
+    ///    near_lake_framework::LakeBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(112205773)
+    ///        .build()?
+    ///        .run(handle_block)
+    ///# }
+    ///
+    /// # async fn handle_block(_block: near_lake_primitives::block::Block) -> anyhow::Result<()> { Ok(()) }
+    ///```
     pub fn run<Fut>(
         self,
         f: impl Fn(near_lake_primitives::block::Block) -> Fut,
