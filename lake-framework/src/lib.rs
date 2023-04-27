@@ -38,6 +38,9 @@ impl types::Lake {
         let runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(async {
+            // capture the concurrency value before it moves into the streamer
+            let concurrency = self.concurrency;
+
             // instantiate the NEAR Lake Framework Stream
             let (sender, stream) = streamer::streamer(self);
 
@@ -49,7 +52,7 @@ impl types::Lake {
                     let block: near_lake_primitives::block::Block = streamer_message.into();
                     f(block, context).await
                 })
-                .buffer_unordered(1usize);
+                .buffer_unordered(concurrency);
 
             while let Some(_handle_message) = handlers.next().await {}
             drop(handlers); // close the channel so the sender will stop
