@@ -7,7 +7,7 @@ use futures::{Future, StreamExt};
 pub use near_lake_primitives::{self, near_indexer_primitives, LakeContext};
 
 pub use aws_credential_types::Credentials;
-pub use types::{Lake, LakeBuilder};
+pub use types::{Lake, LakeBuilder, LakeError};
 
 mod s3_fetchers;
 mod streamer;
@@ -15,32 +15,41 @@ pub(crate) mod types;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 
-/// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
-///```no_run
-///# fn main() -> anyhow::Result<()> {
-///    near_lake_framework::LakeBuilder::default()
-///        .testnet()
-///        .start_block_height(112205773)
-///        .build()?
-///        .run(handle_block)
-///# }
-///
-/// # async fn handle_block(_block: near_lake_primitives::block::Block, _context: near_lake_framework::LakeContext) -> anyhow::Result<()> { Ok(()) }
-///```
 impl types::Lake {
-    pub fn run<Fut>(
+    /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
+    ///```no_run
+    ///  struct MyContext {
+    ///      my_field: String,
+    ///  }
+    ///# fn main() -> anyhow::Result<()> {
+    ///
+    ///    let context = MyContext {
+    ///       my_field: "my_value".to_string(),
+    ///    };
+    ///
+    ///    near_lake_framework::LakeBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(112205773)
+    ///        .build()?
+    ///        .run_with_context(handle_block, &context)?;
+    ///    Ok(())
+    ///# }
+    ///
+    /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
+    ///```
+    pub fn run_with_context<'context, C, E, Fut>(
         self,
-        f: impl Fn(near_lake_primitives::block::Block, near_lake_primitives::LakeContext) -> Fut,
-    ) -> anyhow::Result<()>
+        f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
+        context: &'context C,
+    ) -> Result<(), LakeError>
     where
-        Fut: Future<Output = anyhow::Result<()>>,
+        Fut: Future<Output = Result<(), E>>,
+        E: Into<Box<dyn std::error::Error>>,
     {
-        let runtime = tokio::runtime::Runtime::new()?;
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|err| LakeError::RuntimeStartError { error: err })?;
 
-        runtime.block_on(async {
-            // capture the concurrency value before it moves into the streamer
-            let concurrency = self.concurrency;
-
+        runtime.block_on(async move {
             // instantiate the NEAR Lake Framework Stream
             let (sender, stream) = streamer::streamer(self);
 
@@ -48,11 +57,10 @@ impl types::Lake {
             // concurrency 1
             let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
                 .map(|streamer_message| async {
-                    let context = LakeContext {};
                     let block: near_lake_primitives::block::Block = streamer_message.into();
-                    f(block, context).await
+                    f(block, &context).await
                 })
-                .buffer_unordered(concurrency);
+                .buffer_unordered(1usize);
 
             while let Some(_handle_message) = handlers.next().await {}
             drop(handlers); // close the channel so the sender will stop
@@ -60,9 +68,33 @@ impl types::Lake {
             // propagate errors from the sender
             match sender.await {
                 Ok(Ok(())) => Ok(()),
-                Ok(Err(e)) => Err(e),
-                Err(e) => Err(anyhow::Error::from(e)), // JoinError
+                Ok(Err(err)) => Err(err),
+                Err(err) => Err(err.into()), // JoinError
             }
         })
+    }
+
+    /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
+    ///```no_run
+    ///# fn main() -> anyhow::Result<()> {
+    ///    near_lake_framework::LakeBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(112205773)
+    ///        .build()?
+    ///        .run(handle_block)?;
+    ///    Ok(())
+    ///# }
+    ///
+    /// # async fn handle_block(_block: near_lake_primitives::block::Block) -> anyhow::Result<()> { Ok(()) }
+    ///```
+    pub fn run<Fut, E>(
+        self,
+        f: impl Fn(near_lake_primitives::block::Block) -> Fut,
+    ) -> Result<(), LakeError>
+    where
+        Fut: Future<Output = Result<(), E>>,
+        E: Into<Box<dyn std::error::Error>>,
+    {
+        self.run_with_context(|block, _context| f(block), &())
     }
 }

@@ -77,10 +77,7 @@ pub(crate) async fn list_block_heights(
     lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
-) -> Result<
-    Vec<crate::types::BlockHeight>,
-    crate::types::LakeError<aws_sdk_s3::error::ListObjectsV2Error>,
-> {
+) -> Result<Vec<crate::types::BlockHeight>, crate::types::LakeError> {
     tracing::debug!(
         target: crate::LAKE_FRAMEWORK,
         "Fetching block heights from S3, after #{}...",
@@ -117,10 +114,7 @@ pub(crate) async fn fetch_streamer_message(
     lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
-) -> Result<
-    near_lake_primitives::StreamerMessage,
-    crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
-> {
+) -> Result<near_lake_primitives::StreamerMessage, crate::types::LakeError> {
     let block_view = {
         let body_bytes = loop {
             match lake_s3_client
@@ -177,10 +171,7 @@ async fn fetch_shard_or_retry(
     s3_bucket_name: &str,
     block_height: crate::types::BlockHeight,
     shard_id: u64,
-) -> Result<
-    near_lake_primitives::IndexerShard,
-    crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
-> {
+) -> Result<near_lake_primitives::IndexerShard, crate::types::LakeError> {
     let body_bytes = loop {
         match lake_s3_client
             .get_object(

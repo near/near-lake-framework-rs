@@ -10,13 +10,11 @@ fn main() -> anyhow::Result<()> {
         .testnet()
         .start_block_height(112205773)
         .build()?
-        .run(handle_block) // developer-defined async function that handles each block
+        .run(handle_block)?; // developer-defined async function that handles each block
+    Ok(())
 }
 
-async fn handle_block(
-    block: near_lake_primitives::block::Block,
-    _ctx: near_lake_framework::LakeContext,
-) -> anyhow::Result<()> {
+async fn handle_block(block: near_lake_primitives::block::Block) -> anyhow::Result<()> {
     println!("Block {:?}", block.block_height());
 
     Ok(())
