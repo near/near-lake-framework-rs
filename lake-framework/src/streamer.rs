@@ -15,7 +15,7 @@ use crate::{s3_fetchers, types};
 pub(crate) fn streamer(
     config: crate::Lake,
 ) -> (
-    tokio::task::JoinHandle<Result<(), anyhow::Error>>,
+    tokio::task::JoinHandle<Result<(), crate::types::LakeError>>,
     mpsc::Receiver<near_indexer_primitives::StreamerMessage>,
 ) {
     let (sender, receiver) = mpsc::channel(config.blocks_preload_pool_size);
@@ -80,7 +80,7 @@ async fn prefetch_block_heights_into_pool(
     >,
     limit: usize,
     await_for_at_least_one: bool,
-) -> anyhow::Result<Vec<crate::types::BlockHeight>> {
+) -> Result<Vec<crate::types::BlockHeight>, crate::types::LakeError> {
     let mut block_heights = Vec::with_capacity(limit);
     for remaining_limit in (0..limit).rev() {
         tracing::debug!(target: crate::LAKE_FRAMEWORK, "Polling for the next block height without awaiting... (up to {} block heights are going to be fetched)", remaining_limit);
@@ -96,7 +96,9 @@ async fn prefetch_block_heights_into_pool(
                             block_heights.push(block_height);
                         }
                         None => {
-                            return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                            return Err(crate::types::LakeError::InternalError {
+                                error_message: "This state should be unreachable as the block heights stream should be infinite.".to_string()
+                            });
                         }
                     }
                     continue;
@@ -105,7 +107,11 @@ async fn prefetch_block_heights_into_pool(
                 break;
             }
             std::task::Poll::Ready(None) => {
-                return Err(anyhow::anyhow!("This state should be unreachable as the block heights stream should be infinite."));
+                return Err(
+                    crate::types::LakeError::InternalError {
+                        error_message: "This state should be unreachable as the block heights stream should be infinite.".to_string()
+                    }
+                );
             }
         }
     }
@@ -116,7 +122,7 @@ async fn prefetch_block_heights_into_pool(
 pub(crate) async fn start(
     streamer_message_sink: mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: crate::Lake,
-) -> anyhow::Result<()> {
+) -> Result<(), crate::types::LakeError> {
     let mut start_from_block_height = config.start_block_height;
 
     let s3_client = if let Some(config) = config.s3_config {
@@ -235,7 +241,7 @@ pub(crate) async fn start(
             let streamer_message_sink_send_future = streamer_message_sink.send(streamer_message);
 
             let (prefetch_res, send_res): (
-                Result<Vec<types::BlockHeight>, anyhow::Error>,
+                Result<Vec<types::BlockHeight>, crate::types::LakeError>,
                 Result<_, SendError<near_indexer_primitives::StreamerMessage>>,
             ) = futures::join!(
                 prefetched_block_heights_future,

@@ -122,20 +122,37 @@ impl LakeBuilder {
 
 #[allow(clippy::enum_variant_names)]
 #[derive(thiserror::Error, Debug)]
-pub enum LakeError<E> {
+pub enum LakeError {
     #[error("Failed to parse structure from JSON: {error_message}")]
     ParseError {
         #[from]
         error_message: serde_json::Error,
     },
     #[error("AWS S3 error")]
-    AwsError {
+    AwsGetObjectError {
         #[from]
-        error: aws_sdk_s3::types::SdkError<E>,
+        error: aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>,
+    },
+    #[error("AWS S3 error")]
+    AwsLisObjectsV2Error {
+        #[from]
+        error: aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
     },
     #[error("Failed to convert integer")]
     IntConversionError {
         #[from]
         error: std::num::TryFromIntError,
     },
+    #[error("Join error")]
+    JoinError {
+        #[from]
+        error: tokio::task::JoinError,
+    },
+    #[error("Failed to start runtime")]
+    RuntimeStartError {
+        #[from]
+        error: std::io::Error,
+    },
+    #[error("Internal error: {error_message}")]
+    InternalError { error_message: String },
 }

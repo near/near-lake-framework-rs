@@ -12,18 +12,55 @@ fn main() -> anyhow::Result<()> {
         .testnet()
         .start_block_height(112205773)
         .build()?
-        .run(handle_block)
+        .run(handle_block)?;
+    Ok(())
 }
 
 // The handler function to take the `Block`
 // and print the block height
 async fn handle_block(
     block: near_lake_primitives::block::Block,
-    _context: near_lake_framework::LakeContext,
 ) -> anyhow::Result<()> {
     eprintln!(
         "Block #{}",
         block.block_height(),
+    );
+#    Ok(())
+}
+```
+
+### Pass the context to the function
+
+```no_run
+struct MyContext {
+    my_field: String
+}
+
+fn main() -> anyhow::Result<()> {
+
+    let context = MyContext {
+        my_field: "My value".to_string(),
+    };
+
+    near_lake_framework::LakeBuilder::default()
+        .testnet()
+        .start_block_height(112205773)
+        .build()?
+        .run_with_context(handle_block, &context)?;
+
+    Ok(())
+}
+
+// The handler function to take the `Block`
+// and print the block height
+async fn handle_block(
+    block: near_lake_primitives::block::Block,
+    context: &MyContext,
+) -> anyhow::Result<()> {
+    eprintln!(
+        "Block #{} / {}",
+        block.block_height(),
+        context.my_field,
     );
 #    Ok(())
 }
@@ -35,6 +72,10 @@ async fn handle_block(
  - [Migrating to NEAR Lake Framework](https://near-indexers.io/tutorials/lake/migrating-to-near-lake-framework) from [NEAR Indexer Framework](https://near-indexers.io/docs/projects/near-indexer-framework)
 
 ### More examples
+
+You might want to have a look at the always up-to-date examples in [`examples`](https://github.com/near/near-lake-framework-rs/tree/main/lake-framework/examples) folder.
+
+Other examples that we try to keep up-to-date but we might fail sometimes:
 
  - <https://github.com/near-examples/near-lake-raw-printer> simple example of a data printer built on top of NEAR Lake Framework
  - <https://github.com/near-examples/near-lake-accounts-watcher> another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose

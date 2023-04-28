@@ -4,7 +4,6 @@ version = "0.0.0" # managed by cargo-workspaces
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.51"
 aws-config = "0.53.0"
 aws-types = "0.53.0"
 aws-credential-types = "0.53.0"
@@ -24,6 +23,8 @@ near-lake-primitives = { path = "../lake-primitives" }
 
 [dev-dependencies]
 aws-smithy-http = "0.53.0"
+# use by examples
+anyhow = "1.0.51"
 
 # used by nft_indexer example
 regex = "1.5.4"
