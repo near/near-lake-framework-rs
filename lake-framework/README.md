@@ -73,7 +73,7 @@ async fn handle_block(
 
 ### More examples
 
-You might want to have a look at the alwaya up-to-date examples in [`examples`](https://github.com/near/near-lake-framework-rs/tree/main/lake-framework/examples) folder.
+You might want to have a look at the always up-to-date examples in [`examples`](https://github.com/near/near-lake-framework-rs/tree/main/lake-framework/examples) folder.
 
 Other examples that we try to keep up-to-date but we might fail sometimes:
 
