@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 /// Type alias represents the block height
 pub type BlockHeight = u64;
 
@@ -62,6 +64,9 @@ pub struct Lake {
     /// **WARNING**: Increase this value only if your block handling logic doesn't have to rely on previous blocks and can be processed in parallel
     #[builder(default = "1")]
     pub(crate) concurrency: usize,
+    /// A list of middlewares to be called on each block receival and before the block is sent to the handler
+    #[builder(setter(strip_option, custom))]
+    pub(crate) middlewares: Option<Vec<Box<dyn LakeMiddleware>>>,
 }
 
 impl LakeBuilder {
@@ -118,6 +123,16 @@ impl LakeBuilder {
         self.s3_region_name = Some("us-east-1".to_string());
         self
     }
+    /// Add a middleware to the list of middlewares to be applied on each block receival
+    /// The middleware
+    pub fn middleware<M: LakeMiddleware + 'static>(mut self, middleware: M) -> Self {
+        if let Some(Some(middlewares)) = &mut self.middlewares {
+            middlewares.push(Box::new(middleware));
+        } else {
+            self.middlewares = Some(Some(vec![Box::new(middleware)]));
+        }
+        self
+    }
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -155,4 +170,14 @@ pub enum LakeError {
     },
     #[error("Internal error: {error_message}")]
     InternalError { error_message: String },
+}
+
+// pub trait LakeMiddleware: Middleware +  {}
+
+#[async_trait::async_trait]
+pub trait LakeMiddleware: Debug + Send + Sync {
+    async fn process(
+        &self,
+        block: near_lake_primitives::block::Block,
+    ) -> near_lake_primitives::block::Block;
 }

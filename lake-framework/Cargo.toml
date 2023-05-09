@@ -4,12 +4,12 @@ version = "0.0.0" # managed by cargo-workspaces
 edition = "2021"
 
 [dependencies]
+async-stream = "0.3.3"
+async-trait = "0.1.68"
 aws-config = "0.53.0"
 aws-types = "0.53.0"
 aws-credential-types = "0.53.0"
 aws-sdk-s3 = "0.23.0"
-async-stream = "0.3.3"
-async-trait = "0.1.64"
 derive_builder = "0.11.2"
 futures = "0.3.23"
 serde = { version = "1", features = ["derive"] }
