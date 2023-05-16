@@ -74,3 +74,47 @@ near_lake_framework::LakeBuilder::default()
 ```
 
 Replace `<desired_block_height>` with the starting block height you want to use. Replace `<you_indexing_function>` with the function you want to use to index the blocks.
+
+## Advanced Usage
+
+### Cache size
+
+We use [SizedCache](https://docs.rs/cached/0.43.0/cached/stores/struct.SizedCache.html) under the hood. So we can configure the cache size by using the `cache_size` method:
+
+```no_run
+# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
+    .cache_size(100_000);
+```
+
+By default the cache size is 100,000.
+
+### Watch for specific accounts
+
+By default `ParentTransactionCache` context will cache the relation between Transaction and Receipt for every Transaction in the block. But you can configure it to watch for specific accounts only:
+
+#### You can pass a Vec of AccountId
+
+```no_run
+# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+use near_lake_framework::near_primitives::types::AccountId;
+
+let accounts_to_watch: Vec<AccountId> = vec![
+    String::from("alice.near).try_into().unwrap(),
+    String::from("bob.near).try_into().unwrap(),
+];
+let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
+    .for_accounts(accounts_to_watch);
+```
+
+#### You can pass accounts to watch one by one using `for_account` method
+
+```no_run
+# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+use near_lake_framework::near_primitives::types::AccountId;
+
+let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
+    .for_account(String::from("alice.near).try_into().unwrap())
+    .for_account(String::from("bob.near).try_into().unwrap());
+```
+
