@@ -29,3 +29,6 @@ anyhow = "1.0.51"
 # used by nft_indexer example
 regex = "1.5.4"
 once_cell = "1.8.0"
+
+# used by with_context_parent_tx_cache example
+lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }
