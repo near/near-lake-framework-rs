@@ -16,7 +16,7 @@ We introduce `near-lake-primitives` crate with simplified primitive structures (
 
 And some other changes:
 
-- `LakeConfig` is renamed to be just `Lake`. It is done because since this update `Lake` is accepting the **indexing function** from a user and runs the streamer implicitly. Thus shortening and simplifying the start boilerplate to something line this:
+- `LakeConfig` is renamed to be just `Lake`. It is done because since this update `Lake` is accepting the **indexing function** from a user and runs the streamer implicitly. Thus shortening and simplifying the start boilerplate to something like this:
   ```rust
   fn main() -> anyhow::Result<()> {
       // Lake Framework start boilerplate
@@ -28,7 +28,7 @@ And some other changes:
   }
   ```
 
-  Please note your main function isn't required to be asynchronous anymore! It is not handled by Lake Framework under the hood.
+  Please note your main function isn't required to be asynchronous anymore! It is now handled by Lake Framework under the hood.
 
 ## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...v0.6.0)
 
