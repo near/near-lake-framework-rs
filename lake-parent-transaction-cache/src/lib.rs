@@ -6,6 +6,7 @@ use cached::{Cached, SizedCache};
 use near_lake_framework::{
     near_indexer_primitives::{near_primitives::types::AccountId, CryptoHash},
     near_lake_primitives::{actions::ActionMetaDataExt, block::Block},
+    LakeContextExt,
 };
 
 pub type ReceiptId = CryptoHash;
@@ -57,11 +58,11 @@ impl ParentTransactionCacheBuilder {
     }
 }
 
-impl ParentTransactionCache {
+impl LakeContextExt for ParentTransactionCache {
     /// The process to scan the [near_lake_primitives::Block](near_lake_framework::near_lake_primitives::block::Block) and update the cache
     /// with the new transactions and first expected receipts.
     /// The cache is used to find the parent transaction hash for a given receipt id.
-    pub fn update_cache(&self, block: &mut Block) {
+    fn execute_before_run(&self, block: &mut Block) {
         // Fill up the cache with new transactions and first expected receipts
         // We will try to skip the transactions related to the accounts we're not watching for.
         // Based on `accounts_id`
@@ -84,11 +85,16 @@ impl ParentTransactionCache {
             let parent_tx_hash = cache.cache_remove(&receipt_id);
 
             if let Some(parent_tx_hash) = parent_tx_hash {
-                cache.cache_set(receipt_id, parent_tx_hash.clone());
+                cache.cache_set(receipt_id, parent_tx_hash);
             }
         }
     }
 
+    /// We don't need to do anything after the run.
+    fn execute_after_run(&self) {}
+}
+
+impl ParentTransactionCache {
     /// Returns the parent transaction hash for a given receipt id.
     /// If the receipt id is not found in the cache, it returns None.
     /// If the receipt id is found in the cache, it returns the parent transaction hash.

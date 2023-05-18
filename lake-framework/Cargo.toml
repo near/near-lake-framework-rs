@@ -20,6 +20,7 @@ tokio-stream = { version = "0.1" }
 tracing = "0.1.13"
 
 near-lake-primitives = { path = "../lake-primitives" }
+lake-context-derive = { path = "../lake-context-derive" }
 
 [dev-dependencies]
 aws-smithy-http = "0.53.0"

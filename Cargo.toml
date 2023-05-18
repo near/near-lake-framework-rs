@@ -3,6 +3,7 @@ members = [
     "lake-framework",
     "lake-primitives",
     "lake-parent-transaction-cache",
+    "lake-context-derive",
 ]
 
 # cargo-workspaces

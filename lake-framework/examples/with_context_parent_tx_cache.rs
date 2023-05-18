@@ -36,7 +36,7 @@ async fn print_function_call_tx_hash(
     mut block: near_lake_primitives::block::Block,
     ctx: &ParentTransactionCache,
 ) -> anyhow::Result<()> {
-    ctx.update_cache(&mut block); // Call it as early as possible to have an updated cache.
+    // Cache has been updated before this function is called.
     let block_height = block.block_height();
     let actions: Vec<(
         &near_lake_primitives::actions::FunctionCall,

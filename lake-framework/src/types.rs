@@ -156,3 +156,8 @@ pub enum LakeError {
     #[error("Internal error: {error_message}")]
     InternalError { error_message: String },
 }
+
+pub trait LakeContext {
+    fn execute_before_run(&self, block: &mut near_lake_primitives::block::Block);
+    fn execute_after_run(&self);
+}

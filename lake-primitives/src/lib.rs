@@ -5,6 +5,3 @@ pub use near_indexer_primitives::{
 pub use types::{actions, block, events, receipts, state_changes, transactions};
 
 mod types;
-
-#[derive(Debug)]
-pub struct LakeContext {}

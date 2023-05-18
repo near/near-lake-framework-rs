@@ -1,15 +1,14 @@
 //! This example show how to use a context with Lake Framework.
 //! It is going to follow the NEAR Social contract and the block height along
 //! with a number of calls to the contract.
+use near_lake_framework::{near_lake_primitives, LakeContext};
 use std::io::Write;
-
-use near_lake_framework::near_lake_primitives;
 // We need to import this trait to use the `as_function_call` method.
 use near_lake_primitives::actions::ActionMetaDataExt;
 
 const CONTRACT_ID: &str = "social.near";
 
-#[derive(Clone)]
+#[derive(Clone, LakeContext)]
 struct FileContext {
     path: std::path::PathBuf,
 }
