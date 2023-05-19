@@ -32,6 +32,7 @@ async fn handle_block(
 ### Pass the context to the function
 
 ```no_run
+#[derive(near_lake_framework::LakeContext)]
 struct MyContext {
     my_field: String
 }

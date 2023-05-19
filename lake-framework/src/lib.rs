@@ -8,7 +8,7 @@ pub use lake_context_derive::LakeContext;
 pub use near_lake_primitives::{self, near_indexer_primitives};
 
 pub use aws_credential_types::Credentials;
-pub use types::{Lake, LakeBuilder, LakeContext as LakeContextExt, LakeError};
+pub use types::{Lake, LakeBuilder, LakeContextExt, LakeError};
 
 mod s3_fetchers;
 mod streamer;
@@ -19,9 +19,13 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 impl types::Lake {
     /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
     ///```no_run
+    ///  # use near_lake_framework::{LakeContext};
+    ///
+    /// #[derive(LakeContext)]
     ///  struct MyContext {
     ///      my_field: String,
     ///  }
+    ///
     ///# fn main() -> anyhow::Result<()> {
     ///
     ///    let context = MyContext {
@@ -38,7 +42,7 @@ impl types::Lake {
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
     ///```
-    pub fn run_with_context<'context, C: types::LakeContext, E, Fut>(
+    pub fn run_with_context<'context, C: LakeContextExt, E, Fut>(
         self,
         f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
         context: &'context C,
