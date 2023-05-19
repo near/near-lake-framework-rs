@@ -31,11 +31,8 @@ anyhow = "1.0.51"
 regex = "1.5.4"
 once_cell = "1.8.0"
 
-<<<<<<< HEAD
 # used in the doc examples
 diesel = { version = "2", features= ["postgres_backend", "postgres"] }
 
-=======
->>>>>>> 41a1234 (feat: ParentTransactionCache context and example)
 # used by with_context_parent_tx_cache example
 lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }
