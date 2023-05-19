@@ -70,7 +70,7 @@ near_lake_framework::LakeBuilder::default()
     .mainnet()
     .start_block_height(<desired_block_height>)
     .build()?
-    .run_with_context(<you_indexing_function>, &parent_transaction_cache_ctx)?;
+    .run_with_context(<your_indexing_function>, &parent_transaction_cache_ctx)?;
 ```
 
 Replace `<desired_block_height>` with the starting block height you want to use. Replace `<you_indexing_function>` with the function you want to use to index the blocks.
