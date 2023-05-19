@@ -22,7 +22,7 @@ pub struct ParentTransactionCache {
     )]
     cache: std::sync::RwLock<Cache>,
     #[builder(setter(custom = true, name = "for_accounts"))]
-    accounts_id: Vec<AccountId>,
+    account_ids: Vec<AccountId>,
 }
 
 impl ParentTransactionCacheBuilder {
@@ -38,7 +38,7 @@ impl ParentTransactionCacheBuilder {
     /// sender or receiver in the list of accounts.
     /// **Warning**: This method overrides the previous value.
     pub fn for_accounts(mut self, accounts_id: Vec<AccountId>) -> Self {
-        self.accounts_id = Some(accounts_id);
+        self.account_ids = Some(accounts_id);
         self
     }
 
@@ -48,11 +48,11 @@ impl ParentTransactionCacheBuilder {
     /// in the list of accounts.
     /// **Warning**: This method appends to the previous value.
     pub fn for_account(mut self, account_id: AccountId) -> Self {
-        if let Some(mut accounts_id) = self.accounts_id.take() {
+        if let Some(mut accounts_id) = self.account_ids.take() {
             accounts_id.push(account_id);
-            self.accounts_id = Some(accounts_id);
+            self.account_ids = Some(accounts_id);
         } else {
-            self.accounts_id = Some(vec![account_id]);
+            self.account_ids = Some(vec![account_id]);
         }
         self
     }
@@ -67,9 +67,9 @@ impl LakeContextExt for ParentTransactionCache {
         // We will try to skip the transactions related to the accounts we're not watching for.
         // Based on `accounts_id`
         for tx in block.transactions().filter(move |tx| {
-            self.accounts_id.is_empty()
-                || self.accounts_id.contains(tx.signer_id())
-                || self.accounts_id.contains(tx.receiver_id())
+            self.account_ids.is_empty()
+                || self.account_ids.contains(tx.signer_id())
+                || self.account_ids.contains(tx.receiver_id())
         }) {
             let tx_hash = tx.transaction_hash();
             tx.actions_included()
