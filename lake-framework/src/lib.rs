@@ -110,34 +110,16 @@ impl types::Lake {
         Fut: Future<Output = Result<(), E>>,
         E: Into<Box<dyn std::error::Error>>,
     {
-        let runtime = tokio::runtime::Runtime::new()
-            .map_err(|err| LakeError::RuntimeStartError { error: err })?;
+        struct EmptyContext {}
 
-        runtime.block_on(async move {
-            // capture the concurrency value before it moves into the streamer
-            let concurrency = self.concurrency;
+        impl LakeContextExt for EmptyContext {
+            fn execute_before_run(&self, _block: &mut near_lake_primitives::block::Block) {}
 
-            // instantiate the NEAR Lake Framework Stream
-            let (sender, stream) = streamer::streamer(self);
+            fn execute_after_run(&self) {}
+        }
 
-            // read the stream events and pass them to a handler function with
-            // concurrency 1
-            let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
-                .map(|streamer_message| async {
-                    let block: near_lake_primitives::block::Block = streamer_message.into();
-                    f(block).await
-                })
-                .buffer_unordered(concurrency);
+        let context = EmptyContext {};
 
-            while let Some(_handle_message) = handlers.next().await {}
-            drop(handlers); // close the channel so the sender will stop
-
-            // propagate errors from the sender
-            match sender.await {
-                Ok(Ok(())) => Ok(()),
-                Ok(Err(err)) => Err(err),
-                Err(err) => Err(err.into()), // JoinError
-            }
-        })
+        self.run_with_context(|block, _context| f(block), &context)
     }
 }
