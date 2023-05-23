@@ -3,6 +3,17 @@ use near_crypto::{PublicKey, Signature};
 use super::receipts::ExecutionStatus;
 use crate::near_indexer_primitives::{types::AccountId, CryptoHash, IndexerTransactionWithOutcome};
 
+/// High-level representation of the `Transaction`.
+///
+/// The structure basically combines the `Transaction` itself and the corresponding `ExecutionOutcome`.
+/// **Reminder**: the result of the transaction execution is always a [Receipt](super::receipts::Receipt)
+/// that looks pretty much like the `Transaction` itself.
+///
+/// #### Important notes on the Transaction
+///
+/// Transaction's `actions` are represented by the [Action](super::actions::Action) enum. Actions are
+/// included for the informational purpose to help developers to know what exactly should happen after the
+/// `Transaction` is executed.
 #[derive(Debug, Clone)]
 pub struct Transaction {
     transaction_hash: CryptoHash,
@@ -16,34 +27,42 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    /// Returns the [CryptoHash] hash of the transaction.
     pub fn transaction_hash(&self) -> CryptoHash {
         self.transaction_hash
     }
 
+    /// Returns the [AccountId] of the signer of the transaction.
     pub fn signer_id(&self) -> &AccountId {
         &self.signer_id
     }
 
+    /// Returns the [PublicKey] of the signer of the transaction.
     pub fn signer_public_key(&self) -> &PublicKey {
         &self.signer_public_key
     }
 
+    /// Returns the [Signature] of the transaction.
     pub fn signature(&self) -> &Signature {
         &self.signature
     }
 
+    /// Returns the [AccountId] of the receiver of the transaction.
     pub fn receiver_id(&self) -> &AccountId {
         &self.receiver_id
     }
 
+    /// Returns the [ExecutionStatus] of the corresponding ExecutionOutcome.
     pub fn status(&self) -> &ExecutionStatus {
         &self.status
     }
 
+    /// Returns the [CryptoHash] id of the corresponding ExecutionOutcome.
     pub fn execution_outcome_id(&self) -> CryptoHash {
         self.execution_outcome_id
     }
 
+    /// Returns the [Action](super::actions::Action) of the transaction.
     pub fn actions_included(&self) -> impl Iterator<Item = &super::actions::Action> {
         self.actions.iter()
     }
