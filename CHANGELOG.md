@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.2](https://github.com/near/near-lake-framework/compare/v0.7.2...0.7.0)
 
 - Upgrade near primitives crate to `0.17.0`
+- Upgrade `tokio` version to the latest (`1.28.2`)
 
 ## [0.7.1](https://github.com/near/near-lake-framework/compare/v0.7.1...0.7.0)
 
