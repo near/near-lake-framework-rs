@@ -1,7 +1,11 @@
 [package]
 name = "near-lake-primitives"
-version.workspace = true
+description = "Primitives for NEAR Lake"
 edition = "2021"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+
 
 [dependencies]
 anyhow = "1.0.51"

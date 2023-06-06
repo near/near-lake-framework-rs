@@ -1,7 +1,10 @@
 [package]
 name = "near-lake-framework"
-version.workspace = true
+description = "Library to connect to the NEAR Lake S3 and stream the data"
 edition = "2021"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 aws-config = "0.53.0"
@@ -32,7 +35,7 @@ regex = "1.5.4"
 once_cell = "1.8.0"
 
 # used in the doc examples
-diesel = { version = "2", features= ["postgres_backend", "postgres"] }
+diesel = { version = "2", features = ["postgres_backend", "postgres"] }
 
 # used by with_context_parent_tx_cache example
 lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }
