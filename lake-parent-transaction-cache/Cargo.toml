@@ -1,6 +1,6 @@
 [package]
 name = "lake-parent-transaction-cache"
-version = "0.0.0" # managed by cargo-workspaces
+version.workspace = true
 edition = "2021"
 
 [dependencies]
