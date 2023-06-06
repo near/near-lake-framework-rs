@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.6.0...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.2...HEAD)
 - Simpler start boilerplate, simpler structures to deal with!
 
 ### Breaking changes
@@ -29,6 +29,35 @@ And some other changes:
   ```
 
   Please note your main function isn't required to be asynchronous anymore! It is now handled by Lake Framework under the hood.
+
+## [0.7.2](https://github.com/near/near-lake-framework/compare/v0.7.1...0.7.2)
+
+- Upgrade near primitives crate to `0.17.0`
+- Upgrade `tokio` version to the latest (`1.28.2`)
+
+## [0.7.1](https://github.com/near/near-lake-framework/compare/v0.7.0...0.7.1)
+
+- Refactor `s3_fetchers` to allow testing
+- Fix `betanet` default region (the corresponding bucket is in different region)
+
+## [0.7.0](https://github.com/near/near-lake-framework/compare/v0.6.1...0.7.0)
+
+- Add support for Meta Transactions [NEP-366](https://github.com/near/NEPs/blob/master/neps/nep-0366.md) by upgrading `near-indexer-primitives` to `0.16`
+- Add helper function for connecting to `betanet` lake
+
+### Breaking change
+
+- `Delegate` action has been introduced in `near-primitives::views::ActionView`, this should be handled everywhere you are handling `ActionView`
+
+## [0.6.1](https://github.com/near/near-lake-framework/compare/v0.6.0...0.6.1)
+
+- Fix of possible silent stops of the streamer (firing logs and returning errors where necessary)
+- Fix the issue the streamer was always 1 block behind
+- Renamed a few internal methods to reflect what they do
+- Added debug and error logs in a few places
+- Introduced a `LakeError` enum using `thiserror` (#42), but not exposing it yet to avoid breaking changes to the framework (for now, it will be done in `0.7.0`)
+- Added proper error handling in a few places
+- Updated the dependencies version of AWS crates
 
 ## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...v0.6.0)
 
