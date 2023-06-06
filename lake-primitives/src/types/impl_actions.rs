@@ -3,7 +3,7 @@ use near_indexer_primitives::{views, IndexerTransactionWithOutcome};
 use crate::actions::{Action, ActionMetadata, DelegateAction};
 
 impl Action {
-    // Tries to convert a &ReceiptView into a vector of Action.
+    // Tries to convert a [&ReceiptView](views::ReceiptView) into a vector of [Action].
     pub fn try_vec_from_receipt_view(
         receipt_view: &views::ReceiptView,
     ) -> Result<Vec<Self>, &'static str> {
@@ -104,7 +104,7 @@ impl Action {
         }
     }
 
-    // Tries to convert a IndexerTransactionWithOutcome to a Vec<Action>
+    // Tries to convert a [IndexerTransactionWithOutcome] to a [Vec<Action>]
     pub fn try_vec_from_transaction_outcome(
         transaction_with_outcome: &IndexerTransactionWithOutcome,
     ) -> Result<Vec<Self>, &'static str> {

@@ -9,6 +9,7 @@ use crate::near_indexer_primitives::{
     CryptoHash,
 };
 
+/// Represents the changes to the state of the account.
 #[derive(Debug, Clone)]
 pub struct StateChange {
     affected_account_id: AccountId,
@@ -17,14 +18,17 @@ pub struct StateChange {
 }
 
 impl StateChange {
+    /// Returns the [AccountId] of the account that was affected by the state change.
     pub fn affected_account_id(&self) -> AccountId {
         self.affected_account_id.clone()
     }
 
+    /// Returns the [StateChangeCause] of the state change.
     pub fn cause(&self) -> StateChangeCause {
         self.cause.clone()
     }
 
+    /// Returns the [StateChangeValue] of the state change.
     pub fn value(&self) -> StateChangeValue {
         self.value.clone()
     }
