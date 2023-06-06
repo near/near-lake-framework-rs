@@ -1,0 +1,8 @@
+[workspace]
+# Use `near-lake-framework-rs` crate CHANGELOG as top-level one
+changelog_update = false
+
+[[package]]
+name = "lake-framework"
+changelog_update = true
+changelog_path = "./CHANGELOG.md"

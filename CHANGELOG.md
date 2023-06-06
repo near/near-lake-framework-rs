@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.2...HEAD)
+- Simpler start boilerplate, simpler structures to deal with!
+
+### Breaking changes
+
+This version introduces a different much simplified concept of Lake Framework usage. Thus it brings breaking changes.
+
+We introduce `near-lake-primitives` crate with simplified primitive structures (e.g `Block`, `Transaction`, `StateChange`, etc.) which is heavily used by Lake Framework since now.
+
+And some other changes:
+
+- `LakeConfig` is renamed to be just `Lake`. It is done because since this update `Lake` is accepting the **indexing function** from a user and runs the streamer implicitly. Thus shortening and simplifying the start boilerplate to something like this:
+  ```rust
+  fn main() -> anyhow::Result<()> {
+      // Lake Framework start boilerplate
+      near_lake_framework::LakeBuilder::default()
+          .mainnet()
+          .start_block_height(80504433)
+          .build()?
+          .run(handle_block) // user-defined asynchronous function that handles each block
+  }
+  ```
+
+  Please note your main function isn't required to be asynchronous anymore! It is now handled by Lake Framework under the hood.
 
 ## [0.7.2](https://github.com/near/near-lake-framework/compare/v0.7.1...0.7.2)
 
@@ -36,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added proper error handling in a few places
 - Updated the dependencies version of AWS crates
 
-## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...0.6.0)
+## [0.6.0](https://github.com/near/near-lake-framework/compare/v0.5.2...v0.6.0)
 
 - Upgrade underlying dependency `near-indexer-primitives` to versions between 0.15 and 0.16
 
@@ -51,7 +74,7 @@ a base64-encoded String that now became raw `Vec<u8>`:
 
 **Refer to this [`nearcore` commit](https://github.com/near/nearcore/commit/8e9be9fff4d520993c81b0e3738c0f223a9538c0) to find all the changes of this kind.**
 
-## [0.5.2](https://github.com/near/near-lake-framework/compare/v0.5.1...0.5.2)
+## [0.5.2](https://github.com/near/near-lake-framework/compare/v0.5.1...v0.5.2)
 
 - Fixed the bug that caused a lag by 100 blocks that was introduced in 0.5.1
 

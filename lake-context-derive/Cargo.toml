@@ -1,0 +1,12 @@
+[package]
+name = "lake-context-derive"
+version.workspace = true
+# version = "0.0.0" # managed by cargo-workspaces
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2.0"
+quote = "1.0"

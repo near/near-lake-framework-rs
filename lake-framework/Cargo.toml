@@ -1,0 +1,38 @@
+[package]
+name = "near-lake-framework"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+aws-config = "0.53.0"
+aws-types = "0.53.0"
+aws-credential-types = "0.53.0"
+aws-sdk-s3 = "0.23.0"
+async-stream = "0.3.3"
+async-trait = "0.1.64"
+derive_builder = "0.11.2"
+futures = "0.3.23"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.75"
+thiserror = "1.0.38"
+tokio = { version = "1.1", features = ["sync", "time", "rt-multi-thread"] }
+tokio-stream = { version = "0.1" }
+tracing = "0.1.13"
+
+near-lake-primitives = { path = "../lake-primitives" }
+lake-context-derive = { path = "../lake-context-derive" }
+
+[dev-dependencies]
+aws-smithy-http = "0.53.0"
+# use by examples
+anyhow = "1.0.51"
+
+# used by nft_indexer example
+regex = "1.5.4"
+once_cell = "1.8.0"
+
+# used in the doc examples
+diesel = { version = "2", features= ["postgres_backend", "postgres"] }
+
+# used by with_context_parent_tx_cache example
+lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }
