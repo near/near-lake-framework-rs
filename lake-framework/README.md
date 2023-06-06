@@ -71,7 +71,7 @@ async fn handle_block(
 
 It is an old problem that the NEAR Protocol doesn't provide the parent transaction hash in the receipt. This is a problem for the indexer that needs to know the parent transaction hash to build the transaction tree. We've got you covered with the [`lake-parent-transaction-cache`](../lake-parent-transaction-cache/) crate that provides a cache for the parent transaction hashes.
 
-```no_run
+```ignore
 use near_lake_framework::near_lake_primitives;
 use near_lake_primitives::CryptoHash;
 use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};

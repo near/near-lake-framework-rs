@@ -74,6 +74,10 @@ For more information [refer to the docs](https://docs.rs/near-lake-framework)
 
 ### More examples
 
+We're keeping a set of examples in the [examples](./examples/) folder. The examples there are always up-to-date with the latest version of the NEAR Lake Framework.
+
+And here are some more examples. Despite the fact that they are not up-to-date with the latest version of the NEAR Lake Framework, they still can be used as a reference. Though, we try to keep them updated as well.
+
 - [`near-examples/near-lake-raw-printer`](https://github.com/near-examples/near-lake-raw-printer) simple example of a data printer built on top of NEAR Lake Framework
 - [`near-examples/near-lake-accounts-watcher`](https://github.com/near-examples/near-lake-accounts-watcher) another simple example of the indexer built on top of NEAR Lake Framework for a tutorial purpose
 - [`near-examples/indexer-tx-watcher-example-lake`](https://github.com/near-examples/indexer-tx-watcher-example-lake) an example of the indexer built on top of NEAR Lake Framework that watches for transactions related to specified account(s)
