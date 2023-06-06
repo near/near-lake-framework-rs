@@ -239,7 +239,7 @@ impl DelegateAction {
                     deposit,
                 } => Self::DelegateFunctionCall(DelegateFunctionCall {
                     method_name,
-                    args,
+                    args: args.into(),
                     gas,
                     deposit,
                 }),
