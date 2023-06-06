@@ -14,3 +14,7 @@ near-lake-framework = { path = "../lake-framework", version = "0.8.0-beta.2" }
 
 [dev-dependencies]
 anyhow = "1.0.44"
+
+[[example]]
+name = "with_context_parent_tx_cache"
+path = "../examples/with_context_parent_tx_cache.rs"
