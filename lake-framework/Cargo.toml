@@ -38,4 +38,4 @@ once_cell = "1.8.0"
 diesel = { version = "2", features = ["postgres_backend", "postgres"] }
 
 # used by with_context_parent_tx_cache example
-near-lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }
+near-lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache", version = "0.8.0-beta.1" }
