@@ -45,7 +45,7 @@ impl Action {
                     } => Self::FunctionCall(crate::actions::FunctionCall {
                         metadata: metadata.clone(),
                         method_name: method_name.clone(),
-                        args: args.clone(),
+                        args: args.clone().into(),
                         gas: *gas,
                         deposit: *deposit,
                     }),
