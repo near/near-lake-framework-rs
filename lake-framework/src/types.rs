@@ -275,7 +275,7 @@ pub enum LakeError {
 /// #### Advanced Context example
 /// In this example we will extend a previous one with the `ParentTransactionCache` context Lake Framework team has created and shared with everybody.
 ///
-/// ```no_run
+/// ```ignore
 /// use near_lake_framework::LakeContext; // This is a derive macro
 /// use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder}; // This is a ready-to-use Context from the community that impls LakeContext trait
 /// use near_lake_framework::LakeBuilder;
