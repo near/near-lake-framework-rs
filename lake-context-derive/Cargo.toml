@@ -1,8 +1,10 @@
 [package]
 name = "lake-context-derive"
-version.workspace = true
-# version = "0.0.0" # managed by cargo-workspaces
+description = "Derive macro for LakeContext"
 edition = "2021"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [lib]
 proc-macro = true
