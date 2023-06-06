@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - main
+      - 0.7.x # we're going to maintain 0.7.x version until the adoption of 0.8.x will be completed
   pull_request:
     branches:
       - main
-      - dev-0.8.0 # Add the dev-0.8.0 branch as a trigger for pull request events
+      - 0.7.x # we're going to maintain 0.7.x version until the adoption of 0.8.x will be completed
 
 env:
   CARGO_TERM_COLOR: always
