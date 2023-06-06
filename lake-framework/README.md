@@ -74,7 +74,7 @@ It is an old problem that the NEAR Protocol doesn't provide the parent transacti
 ```no_run
 use near_lake_framework::near_lake_primitives;
 use near_lake_primitives::CryptoHash;
-use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
+use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
 use near_lake_primitives::actions::ActionMetaDataExt;
 
 fn main() -> anyhow::Result<()> {

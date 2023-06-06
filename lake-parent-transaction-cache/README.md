@@ -1,11 +1,11 @@
-# Lake Parent Transaction Cache (Context)
+# NEAR Lake Parent Transaction Cache (Context)
 
 Lake Parent Transaction Cache is a ready-to-use context for the Lake Framework in Rust. It provides a cache for keeping the relation between transactions and receipts in cache.
 
 ## Example Usage
 
 ```no_run
-use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
+use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
 # use near_lake_framework::LakeBuilder;
 # use near_lake_framework::near_lake_primitives::{block::Block, actions::ActionMetaDataExt};
 
@@ -46,20 +46,20 @@ To use the Lake Parent Transaction Cache context in your Rust project, follow th
 
 ```toml
 [dependencies]
-lake_parent_transaction_cache = "<version>"
+near-lake-parent-transaction-cache = "<version>"
 ```
 
 2. Import the necessary modules in your code:
 
 ```ignore
-use lake_parent_transaction_cache::ParentTransactionCache;
+use near_lake_parent_transaction_cache::ParentTransactionCache;
 use near_lake_primitives::actions::ActionMetaDataExt;
 ```
 
 3. Create an instance of the `ParentTransactionCache` context:
 
 ```no_run
-# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+# use near_lake_parent_transaction_cache::ParentTransactionCacheBuilder;
 let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default();
 ```
 
@@ -82,7 +82,7 @@ Replace `<desired_block_height>` with the starting block height you want to use.
 We use [SizedCache](https://docs.rs/cached/0.43.0/cached/stores/struct.SizedCache.html) under the hood. So we can configure the cache size by using the `cache_size` method:
 
 ```no_run
-# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+# use near_lake_parent_transaction_cache::ParentTransactionCacheBuilder;
 let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
     .cache_size(100_000);
 ```
@@ -96,12 +96,12 @@ By default `ParentTransactionCache` context will cache the relation between Tran
 #### You can pass a Vec of AccountId
 
 ```no_run
-# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+# use near_lake_parent_transaction_cache::ParentTransactionCacheBuilder;
 use near_lake_framework::near_primitives::types::AccountId;
 
 let accounts_to_watch: Vec<AccountId> = vec![
-    String::from("alice.near).try_into().unwrap(),
-    String::from("bob.near).try_into().unwrap(),
+    String::from("alice.near").try_into().unwrap(),
+    String::from("bob.near").try_into().unwrap(),
 ];
 let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
     .for_accounts(accounts_to_watch);
@@ -110,11 +110,11 @@ let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
 #### You can pass accounts to watch one by one using `for_account` method
 
 ```no_run
-# use lake_parent_transaction_cache::ParentTransactionCacheBuilder;
+# use near_lake_parent_transaction_cache::ParentTransactionCacheBuilder;
 use near_lake_framework::near_primitives::types::AccountId;
 
 let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
-    .for_account(String::from("alice.near).try_into().unwrap())
-    .for_account(String::from("bob.near).try_into().unwrap());
+    .for_account(String::from("alice.near").try_into().unwrap())
+    .for_account(String::from("bob.near").try_into().unwrap());
 ```
 

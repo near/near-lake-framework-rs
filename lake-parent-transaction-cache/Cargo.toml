@@ -1,5 +1,5 @@
 [package]
-name = "lake-parent-transaction-cache"
+name = "near-lake-parent-transaction-cache"
 description = "Ready-to-use context for the Lake Framework in Rust. It provides a cache for keeping the relation between transactions and receipts in cache."
 edition = "2021"
 version.workspace = true

@@ -1,4 +1,4 @@
-# Lake Context Derive
+# NEAR Lake Context Derive
 
 Lake Context Derive is a Rust crate that provides a derive macro for easy and convenient implementation of the `near_lake_framework::LakeContextExt` trait. This trait has two functions: `execute_before_run` and `execute_after_run` that are executed before and after the user-provided indexer function respectively.
 
@@ -6,8 +6,8 @@ Lake Context Derive is a Rust crate that provides a derive macro for easy and co
 
 The Lake Context Derive macro can be utilized by annotating the context struct with `#[derive(LakeContext)]`. This trait implementation will then facilitate the combination of different contexts. For instance, to use a `ParentTransactionCache` with some additional data, one would define a context like:
 
-```no_run
-use lake_parent_transaction_cache::ParentTransactionCache;
+```ignore
+use near_lake_parent_transaction_cache::ParentTransactionCache;
 
 #[derive(LakeContext)]
 struct MyContext {
@@ -20,10 +20,12 @@ struct MyContext {
 
 You can create an instance of your context as follows:
 
-```no_run
+```ignore
+use near_lake_parent_transaction_cache::{ParentTransactionCacheBuilder};
+
 let my_context = MyContext {
   db_connection_string: String::from("postgres://user:pass@host/db"),
-  parent_tx_cache: ParentTransactionCache::default().build().unwrap(),
+  parent_tx_cache: ParentTransactionCacheBuilder::default().build().unwrap(),
 };
 ```
 
@@ -31,7 +33,7 @@ let my_context = MyContext {
 
 This will simplify your indexer function signature. It now needs only the context as an additional parameter:
 
-```no_run
+```ignore
 async fn handle_block(
     mut block: Block,
     ctx: &MyContext,

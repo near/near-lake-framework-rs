@@ -277,7 +277,7 @@ pub enum LakeError {
 ///
 /// ```no_run
 /// use near_lake_framework::LakeContext; // This is a derive macro
-/// use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder}; // This is a ready-to-use Context from the community that impls LakeContext trait
+/// use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder}; // This is a ready-to-use Context from the community that impls LakeContext trait
 /// use near_lake_framework::LakeBuilder;
 /// # use diesel::Connection;
 ///

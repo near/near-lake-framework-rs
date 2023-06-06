@@ -6,7 +6,7 @@
 use near_lake_framework::near_lake_primitives;
 use near_lake_primitives::CryptoHash;
 // We need to import this trait to use the `as_function_call` method.
-use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
+use near_lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
 use near_lake_primitives::actions::ActionMetaDataExt;
 
 const CONTRACT_ID: &str = "social.near";
