@@ -2,11 +2,13 @@
 members = [
     "lake-framework",
     "lake-primitives",
+    "lake-parent-transaction-cache",
+    "lake-context-derive",
 ]
 
 # cargo-workspaces
 [workspace.package]
-version = "0.6.0"
+version = "0.8.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/near-lake-framework"
 description = "Library to connect to the NEAR Lake S3 and stream the data"

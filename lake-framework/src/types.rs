@@ -156,3 +156,169 @@ pub enum LakeError {
     #[error("Internal error: {error_message}")]
     InternalError { error_message: String },
 }
+
+/// ### The concept of Context for the Lake Framework
+/// The main idea of the Lake Framework is to provide a simple way to index data from the NEAR blockchain.
+/// The framework is designed to be as flexible as possible, so it doesn't provide any specific logic for indexing.
+/// Instead, it provides a way to implement your own logic. One of the main concepts of the framework is the Context.
+/// The Context is a struct that implements the [LakeContext] trait. It is used to pass data between the framework and your logic.
+/// The Context is created once and then passed to the framework. The framework will call the [LakeContext::execute_before_run]
+/// method before the indexing process starts and [LakeContext::execute_after_run] after the indexing process is finished.
+/// The Context is useful for passing data between blocks. For example, you can use it to store the last block timestamp and use it in the next block.
+///
+/// Also the Context is necessary to pass the "global" data to the indexing process. For example, you can use it to pass the database connection pool.
+///
+/// ### Examples
+///
+/// #### Simple Context examples (explicit)
+/// **WARNING**: This example demonsrates how Context works explicitly. In the real-world application you would do less boilerplate. See further examples.
+/// In this example we will create a simple Context that prints the block height before the processing the block.
+/// ```no_run
+/// use near_lake_framework::LakeContextExt; // note Lake Framework exports this trait with a suffix Ext in the name
+/// struct PrinterContext;
+///
+/// impl LakeContextExt for PrinterContext {
+///    fn execute_before_run(&self, block: &mut near_lake_primitives::block::Block) {
+///       println!("Processing block {}", block.header().height());
+///   }
+///   fn execute_after_run(&self) {}
+/// }
+/// ```
+/// As you can see we will be printing `Processing block {block_height}` before processing the block. And we will do nothing after
+///  the indexing process is finished.
+///
+/// The next example is showing how to provide some value to the indexing process.
+/// ```no_run
+/// use near_lake_framework::LakeContextExt; // note Lake Framework exports this trait with a suffix Ext in the name
+/// use near_lake_framework::LakeBuilder;
+/// # use diesel::Connection;
+///
+/// struct ApplicationDataContext {
+///    pub db_pool: diesel::pg::PgConnection,
+/// }
+///
+/// // We need our context to do nothing before and after the indexing process.
+/// // The only purpose is to provide the database connection pool to the indexing process.
+/// impl LakeContextExt for ApplicationDataContext {
+///   fn execute_before_run(&self, block: &mut near_lake_primitives::block::Block) {}
+///   fn execute_after_run(&self) {}
+/// }
+///
+/// fn main() {
+///     let db_pool = diesel::PgConnection::establish("postgres://localhost:5432")
+///        .expect("Failed to connect to database");
+///     let context = ApplicationDataContext { db_pool };
+///
+///     let result = LakeBuilder::default()
+///       .testnet()
+///       .start_block_height(82422587)
+///       .build()
+///       .unwrap()
+///       .run_with_context(indexing_function, &context);
+/// }
+///
+/// async fn indexing_function(
+///    block: near_lake_primitives::block::Block,
+///    context: &ApplicationDataContext,
+/// ) -> Result<(), near_lake_framework::LakeError> {
+///     // Now we can use the database connection pool
+///     let db_pool = &context.db_pool;
+///     ///...
+///     Ok(())
+/// }
+/// ```
+///
+/// #### Simple Context example (real-world)
+/// The last example from the previous section is a bit verbose. In the real-world application you would do less boilerplate.
+/// The main purpose of that example was to show you what's happening under the hood. However, for your convenience, the Lake Framework
+/// provides a trait [LakeContextExt] that implements the [LakeContext] trait for you. So you can use it to create a simple Context.
+///
+/// ```ignore
+/// use near_lake_framework::LakeContext; // This is a derive macro
+/// use near_lake_framework::LakeBuilder;
+///
+/// #[derive(LakeContext)]
+/// /// struct ApplicationDataContext {
+///    pub db_pool: diesel::pg::PgConnection,
+/// }
+///
+/// // Here we got rid of the boilerplate code that we had in the previous example to impl the LakeContext trait.
+///
+/// fn main() {
+///     let db_pool = diesel::pg::PgConnection::establish("postgres://postgres:password@localhost:5432/database")
+///        .unwrap_or_else(|_| panic!("Error connecting to database"))
+///
+///     let context = ApplicationDataContext { db_pool };
+///
+///     let result = LakeBuilder::default()
+///       .testnet()
+///       .start_block_height(82422587)
+///       .build()
+///       .unwrap()
+///       .run_with_context(indexing_function, &context);
+/// }
+///
+/// async fn indexing_function(
+///    block: near_lake_primitives::block::Block,
+///    context: &ApplicationDataContext,
+/// ) -> Result<(), near_lake_framework::LakeError> {
+///     // Now we can use the database connection pool
+///     let db_pool = &context.db_pool;
+///     // ...
+///    Ok(())
+/// }
+/// ```
+///
+/// It might look like not a big deal to get rid of the boilerplate code. However, it is very useful when you have a lot of Contexts or when you
+/// use a ready-to-use Context from the community.
+///
+/// #### Advanced Context example
+/// In this example we will extend a previous one with the `ParentTransactionCache` context Lake Framework team has created and shared with everybody.
+///
+/// ```no_run
+/// use near_lake_framework::LakeContext; // This is a derive macro
+/// use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder}; // This is a ready-to-use Context from the community that impls LakeContext trait
+/// use near_lake_framework::LakeBuilder;
+/// # use diesel::Connection;
+///
+/// #[derive(LakeContext)]
+/// struct ApplicationDataContext {
+///    pub db_pool: diesel::pg::PgConnection,
+///   pub parent_transaction_cache: ParentTransactionCache,
+/// }
+///
+/// fn main() {
+///     let db_pool = diesel::PgConnection::establish("postgres://postgres:password@localhost:5432/database")
+///        .unwrap_or_else(|_| panic!("Error connecting to database"));
+///     let parent_transaction_cache = ParentTransactionCacheBuilder::default().build().unwrap();
+///
+///     let context = ApplicationDataContext { db_pool, parent_transaction_cache };
+///
+///     let result = LakeBuilder::default()
+///       .testnet()
+///       .start_block_height(82422587)
+///       .build()
+///       .unwrap()
+///       .run_with_context(indexing_function, &context);
+/// }
+///
+/// async fn indexing_function(
+///    block: near_lake_primitives::block::Block,
+///    context: &ApplicationDataContext,
+/// ) -> Result<(), near_lake_framework::LakeError> {
+///     // Now we can use the database connection pool
+///     let db_pool = &context.db_pool;
+///     dbg!(&context.parent_transaction_cache);
+///     Ok(())
+/// }
+/// ```
+/// As you can see we have extended our context with the `ParentTransactionCache` context. And we can use it in our indexing function.
+/// The `ParentTransactionCache` defines the `execute_before_run` and `execute_after_run` methods. So when we call `run_with_context` method
+/// the Lake Framework will call `execute_before_run` and `execute_after_run` methods for us.
+/// And we didn't need to implement them in our `ApplicationDataContext` struct because `LakeContext` derive macro did it for us automatically.
+pub trait LakeContextExt {
+    /// This method will be called before the indexing process is started.
+    fn execute_before_run(&self, block: &mut near_lake_primitives::block::Block);
+    /// This method will be called after the indexing process is finished.
+    fn execute_after_run(&self);
+}

@@ -20,6 +20,7 @@ tokio-stream = { version = "0.1" }
 tracing = "0.1.13"
 
 near-lake-primitives = { path = "../lake-primitives" }
+lake-context-derive = { path = "../lake-context-derive" }
 
 [dev-dependencies]
 aws-smithy-http = "0.53.0"
@@ -29,3 +30,9 @@ anyhow = "1.0.51"
 # used by nft_indexer example
 regex = "1.5.4"
 once_cell = "1.8.0"
+
+# used in the doc examples
+diesel = { version = "2", features= ["postgres_backend", "postgres"] }
+
+# used by with_context_parent_tx_cache example
+lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache" }

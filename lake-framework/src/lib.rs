@@ -4,10 +4,11 @@ extern crate derive_builder;
 
 use futures::{Future, StreamExt};
 
-pub use near_lake_primitives::{self, near_indexer_primitives, LakeContext};
+pub use lake_context_derive::LakeContext;
+pub use near_lake_primitives::{self, near_indexer_primitives};
 
 pub use aws_credential_types::Credentials;
-pub use types::{Lake, LakeBuilder, LakeError};
+pub use types::{Lake, LakeBuilder, LakeContextExt, LakeError};
 
 mod s3_fetchers;
 mod streamer;
@@ -18,9 +19,13 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 impl types::Lake {
     /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
     ///```no_run
+    ///  # use near_lake_framework::{LakeContext};
+    ///
+    /// #[derive(LakeContext)]
     ///  struct MyContext {
     ///      my_field: String,
     ///  }
+    ///
     ///# fn main() -> anyhow::Result<()> {
     ///
     ///    let context = MyContext {
@@ -37,7 +42,7 @@ impl types::Lake {
     ///
     /// # async fn handle_block(_block: near_lake_primitives::block::Block, context: &MyContext) -> anyhow::Result<()> { Ok(()) }
     ///```
-    pub fn run_with_context<'context, C, E, Fut>(
+    pub fn run_with_context<'context, C: LakeContextExt, E, Fut>(
         self,
         f: impl Fn(near_lake_primitives::block::Block, &'context C) -> Fut,
         context: &'context C,
@@ -60,8 +65,15 @@ impl types::Lake {
             // concurrency 1
             let mut handlers = tokio_stream::wrappers::ReceiverStream::new(stream)
                 .map(|streamer_message| async {
-                    let block: near_lake_primitives::block::Block = streamer_message.into();
-                    f(block, &context).await
+                    let mut block: near_lake_primitives::block::Block = streamer_message.into();
+
+                    context.execute_before_run(&mut block);
+
+                    let user_indexer_function_execution_result = f(block, context).await;
+
+                    context.execute_after_run();
+
+                    user_indexer_function_execution_result
                 })
                 .buffer_unordered(concurrency);
 
@@ -98,6 +110,16 @@ impl types::Lake {
         Fut: Future<Output = Result<(), E>>,
         E: Into<Box<dyn std::error::Error>>,
     {
-        self.run_with_context(|block, _context| f(block), &())
+        struct EmptyContext {}
+
+        impl LakeContextExt for EmptyContext {
+            fn execute_before_run(&self, _block: &mut near_lake_primitives::block::Block) {}
+
+            fn execute_after_run(&self) {}
+        }
+
+        let context = EmptyContext {};
+
+        self.run_with_context(|block, _context| f(block), &context)
     }
 }

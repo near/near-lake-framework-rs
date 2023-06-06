@@ -32,6 +32,7 @@ async fn handle_block(
 ### Pass the context to the function
 
 ```no_run
+#[derive(near_lake_framework::LakeContext)]
 struct MyContext {
     my_field: String
 }
@@ -63,6 +64,58 @@ async fn handle_block(
         context.my_field,
     );
 #    Ok(())
+}
+```
+
+## Parent Transaction for the Receipt Context
+
+It is an old problem that the NEAR Protocol doesn't provide the parent transaction hash in the receipt. This is a problem for the indexer that needs to know the parent transaction hash to build the transaction tree. We've got you covered with the [`lake-parent-transaction-cache`](../lake-parent-transaction-cache/) crate that provides a cache for the parent transaction hashes.
+
+```no_run
+use near_lake_framework::near_lake_primitives;
+use near_lake_primitives::CryptoHash;
+use lake_parent_transaction_cache::{ParentTransactionCache, ParentTransactionCacheBuilder};
+use near_lake_primitives::actions::ActionMetaDataExt;
+
+fn main() -> anyhow::Result<()> {
+    let parent_transaction_cache_ctx = ParentTransactionCacheBuilder::default()
+        .build()?;
+    // Lake Framework start boilerplate
+    near_lake_framework::LakeBuilder::default()
+        .mainnet()
+        .start_block_height(88444526)
+        .build()?
+        // developer-defined async function that handles each block
+        .run_with_context(print_function_call_tx_hash, &parent_transaction_cache_ctx)?;
+    Ok(())
+}
+
+async fn print_function_call_tx_hash(
+    mut block: near_lake_primitives::block::Block,
+    ctx: &ParentTransactionCache,
+) -> anyhow::Result<()> {
+    // Cache has been updated before this function is called.
+    let block_height = block.block_height();
+    let actions: Vec<(
+        &near_lake_primitives::actions::FunctionCall,
+        Option<CryptoHash>,
+    )> = block
+        .actions()
+        .filter_map(|action| action.as_function_call())
+        .map(|action| {
+            (
+                action,
+                ctx.get_parent_transaction_hash(&action.receipt_id()),
+            )
+        })
+        .collect();
+
+    if !actions.is_empty() {
+        // Here's the usage of the context.
+        println!("Block #{:?}\n{:#?}", block_height, actions);
+    }
+
+    Ok(())
 }
 ```
 
