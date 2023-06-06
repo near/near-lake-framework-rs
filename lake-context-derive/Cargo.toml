@@ -1,5 +1,5 @@
 [package]
-name = "lake-context-derive"
+name = "near-lake-context-derive"
 description = "Derive macro for LakeContext"
 edition = "2021"
 version.workspace = true
@@ -12,3 +12,6 @@ proc-macro = true
 [dependencies]
 syn = "2.0"
 quote = "1.0"
+
+[dev-dependencies]
+near-lake-parent-transaction-cache = { path = "../lake-parent-transaction-cache", version = "0.8.0-beta.1" }

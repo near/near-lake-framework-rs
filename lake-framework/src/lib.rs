@@ -4,8 +4,11 @@ extern crate derive_builder;
 
 use futures::{Future, StreamExt};
 
-pub use lake_context_derive::LakeContext;
-pub use near_lake_primitives::{self, near_indexer_primitives};
+pub use near_lake_context_derive::LakeContext;
+pub use near_lake_primitives::{
+    self,
+    near_indexer_primitives::{self, near_primitives},
+};
 
 pub use aws_credential_types::Credentials;
 pub use types::{Lake, LakeBuilder, LakeContextExt, LakeError};
