@@ -12,8 +12,7 @@ the NEAR Protocol data.
 
 ---
 
-[Official NEAR Lake Framework launch announcement](https://gov.near.org/t/announcement-near-lake-framework-brand-new-word-in-indexer-building-approach/17668) has been published on the NEAR Gov Forum
-Greetings from the Data Platform Team! We are happy and proud to announce an MVP release of a brand new word in indexer building approach - NEAR Lake Framework.
+[Official NEAR Lake Framework High-level update announcement](https://near.org/near/widget/PostPage?accountId=khorolets.near&blockHeight=93659695) made on NEAR.org. This post announces the release of the beta version of the NEAR Lake Framework 0.8.0. The post also includes an overview of the new approach and features from the High-level update.
 
 ---
 
