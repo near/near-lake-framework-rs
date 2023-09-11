@@ -1,6 +1,6 @@
 [package]
 name = "near-lake-framework"
-version = "0.0.0" # managed by cargo-workspaces, see below
+version = "0.0.0"                                                          # managed by cargo-workspaces, see below
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/near-lake-framework"
 description = "Library to connect to the NEAR Lake S3 and stream the data"
@@ -12,7 +12,7 @@ rust-version = "1.58.1"
 
 # cargo-workspaces
 [workspace.metadata.workspaces]
-version = "0.7.2"
+version = "0.7.3"
 
 [dependencies]
 anyhow = "1.0.51"
