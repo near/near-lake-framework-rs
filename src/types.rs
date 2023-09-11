@@ -23,7 +23,7 @@ pub struct LakeConfig {
     pub(crate) s3_bucket_name: String,
     /// AWS S3 Region name
     #[builder(setter(into))]
-    pub(crate) s3_region_name: String,
+    pub s3_region_name: String,
     /// Defines the block height to start indexing from
     pub(crate) start_block_height: u64,
     /// Custom aws_sdk_s3::config::Config
@@ -51,7 +51,7 @@ pub struct LakeConfig {
     /// # }
     /// ```
     #[builder(setter(strip_option), default)]
-    pub(crate) s3_config: Option<aws_sdk_s3::config::Config>,
+    pub s3_config: Option<aws_sdk_s3::config::Config>,
     #[builder(default = "100")]
     pub(crate) blocks_preload_pool_size: usize,
 }
