@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.2...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.3...HEAD)
+
+## [0.7.3](https://github.com/near/near-lake-framework/compare/v0.7.2...0.7.3)
+
+* Expose `s3_fetchers` module to allow using the underlying functionality in other projects
+* Minor refactoring of `s3_fetchers` module
 
 ## [0.7.2](https://github.com/near/near-lake-framework/compare/v0.7.1...0.7.2)
 
