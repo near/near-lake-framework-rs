@@ -72,7 +72,7 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     needs: [rustfmt, rustclippy]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/0.7.x'
 
     steps:
     - name: Checkout Repository
