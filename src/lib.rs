@@ -240,7 +240,6 @@
 //! * [x] [MVP](https://github.com/near/near-lake-framework/milestone/1)
 //! * [ ] [0.8 High-level update](https://github.com/near/near-lake-framework-rs/milestone/3)
 //! * [ ] [1.0](https://github.com/near/near-lake-framework/milestone/2)
-use aws_sdk_s3::Client;
 
 #[macro_use]
 extern crate derive_builder;
@@ -254,9 +253,7 @@ pub use near_indexer_primitives;
 pub use aws_credential_types::Credentials;
 pub use types::{LakeConfig, LakeConfigBuilder};
 
-use s3_fetchers::LakeS3Client;
-
-mod s3_fetchers;
+pub mod s3_fetchers;
 pub(crate) mod types;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
@@ -291,7 +288,7 @@ pub fn streamer(
 }
 
 fn stream_block_heights<'a: 'b, 'b>(
-    lake_s3_client: &'a LakeS3Client,
+    lake_s3_client: &'a s3_fetchers::LakeS3Client,
     s3_bucket_name: &'a str,
     mut start_from_block_height: crate::types::BlockHeight,
 ) -> impl futures::Stream<Item = u64> + 'b {
@@ -388,13 +385,13 @@ async fn start(
     let mut start_from_block_height = config.start_block_height;
 
     let s3_client = if let Some(config) = config.s3_config {
-        Client::from_conf(config)
+        aws_sdk_s3::Client::from_conf(config)
     } else {
         let aws_config = aws_config::from_env().load().await;
         let s3_config = aws_sdk_s3::config::Builder::from(&aws_config)
             .region(aws_types::region::Region::new(config.s3_region_name))
             .build();
-        Client::from_conf(s3_config)
+        aws_sdk_s3::Client::from_conf(s3_config)
     };
     let lake_s3_client = s3_fetchers::LakeS3Client::new(s3_client.clone());
 
