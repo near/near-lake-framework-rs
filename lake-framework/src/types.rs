@@ -133,7 +133,7 @@ pub enum LakeError {
         #[from]
         error: aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
     },
-    #[error("AWS S3 error")]
+    #[error("AWS S3 error: {error:?}")]
     AwsLisObjectsV2Error {
         #[from]
         error:

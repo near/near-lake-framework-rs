@@ -38,6 +38,8 @@ once_cell = "1.8.0"
 # used in the doc examples
 diesel = { version = "2", features = ["postgres_backend", "postgres"] }
 
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
 [[example]]
 name = "simple"
 path = "../examples/simple.rs"
