@@ -131,12 +131,13 @@ pub enum LakeError {
     #[error("AWS S3 error")]
     AwsGetObjectError {
         #[from]
-        error: aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>,
+        error: aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
     },
     #[error("AWS S3 error")]
     AwsLisObjectsV2Error {
         #[from]
-        error: aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+        error:
+            aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
     },
     #[error("Failed to convert integer")]
     IntConversionError {
