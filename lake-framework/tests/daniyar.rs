@@ -14,7 +14,7 @@ async fn handle_block(
 }
 
 // Steps to follow:
-// 1) docker run -p 4566:4566 -e SERVICES=s3 localstack/localstack:latest
+// 1) docker run -p 4566:4566 -e SERVICES=s3 localstack/localstack:3.0.0
 // 2) cargo test daniyar
 #[test]
 fn daniyar() -> anyhow::Result<()> {
@@ -36,7 +36,7 @@ fn daniyar() -> anyhow::Result<()> {
             let aws_config = aws_config::from_env().load().await;
             let s3_config =
                 aws_sdk_s3::config::Builder::from(&aws_types::SdkConfig::from(aws_config))
-                    .endpoint_url("http://localhost:4566")
+                    .endpoint_url("http://[::1]:4566")
                     .build();
             lake_builder = lake_builder.s3_config(s3_config);
             lake_builder.build()
