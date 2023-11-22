@@ -128,28 +128,28 @@ pub enum LakeError {
         #[from]
         error_message: serde_json::Error,
     },
-    #[error("AWS S3 error")]
+    #[error("AWS S3 error: {error}")]
     AwsGetObjectError {
         #[from]
         error: aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
     },
-    #[error("AWS S3 error")]
+    #[error("AWS S3 error: {error}")]
     AwsLisObjectsV2Error {
         #[from]
         error:
             aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
     },
-    #[error("Failed to convert integer")]
+    #[error("Failed to convert integer: {error}")]
     IntConversionError {
         #[from]
         error: std::num::TryFromIntError,
     },
-    #[error("Join error")]
+    #[error("Join error: {error}")]
     JoinError {
         #[from]
         error: tokio::task::JoinError,
     },
-    #[error("Failed to start runtime")]
+    #[error("Failed to start runtime: {error}")]
     RuntimeStartError {
         #[from]
         error: std::io::Error,
