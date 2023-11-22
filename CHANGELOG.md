@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.2...HEAD)
 - Simpler start boilerplate, simpler structures to deal with!
-- Upgrade to latest AWS SDK version (*since beta.3*)
 
 ### Breaking changes
 

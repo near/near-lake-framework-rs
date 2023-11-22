@@ -226,21 +226,19 @@ $ mkdir -p /data/near-lake-custom && minio server /data
 use near_lake_framework::LakeBuilder;
 
 # #[tokio::main]
-# async fn main() -> anyhow::Result<()> {
-    let aws_config = aws_config::from_env().load().await;
-    let s3_config = aws_sdk_s3::config::Builder::from(&aws_types::SdkConfig::from(aws_config))
-        .endpoint_url("http://0.0.0.0:9000")
-        .build();
+# async fn main() {
+let aws_config = aws_config::from_env().load().await;
+let mut s3_conf = aws_sdk_s3::config::Builder::from(&aws_config)
+    .endpoint_url("http://0.0.0.0:9000")
+    .build();
 
-    LakeBuilder::default()
-        .s3_bucket_name("near-lake-custom")
-        .s3_region_name("eu-central-1")
-        .start_block_height(0)
-        .s3_config(s3_config)
-        .build()
-        .expect("Failed to build Lake");
-
-#    Ok(())
+let lake = LakeBuilder::default()
+    .s3_config(s3_conf)
+    .s3_bucket_name("near-lake-data-custom")
+    .s3_region_name("eu-central-1")
+    .start_block_height(1)
+    .build()
+    .expect("Failed to build LakeConfig");
 # }
 ```
 

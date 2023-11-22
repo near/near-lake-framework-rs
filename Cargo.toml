@@ -8,7 +8,7 @@ members = [
 
 # cargo-workspaces
 [workspace.package]
-version = "0.8.0-beta.3"
+version = "0.8.0-beta.2"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/near-lake-framework-rs"
 description = "Library to connect to the NEAR Lake S3 and stream the data"

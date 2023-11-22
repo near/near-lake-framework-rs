@@ -1,8 +1,7 @@
 use async_trait::async_trait;
 use std::str::FromStr;
 
-use aws_sdk_s3::operation::get_object::GetObjectOutput;
-use aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output;
+use aws_sdk_s3::output::{GetObjectOutput, ListObjectsV2Output};
 
 #[async_trait]
 pub trait S3Client {
@@ -10,10 +9,7 @@ pub trait S3Client {
         &self,
         bucket: &str,
         prefix: &str,
-    ) -> Result<
-        GetObjectOutput,
-        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
-    >;
+    ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>;
 
     async fn list_objects(
         &self,
@@ -21,7 +17,7 @@ pub trait S3Client {
         start_after: &str,
     ) -> Result<
         ListObjectsV2Output,
-        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
+        aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
     >;
 }
 
@@ -42,16 +38,14 @@ impl S3Client for LakeS3Client {
         &self,
         bucket: &str,
         prefix: &str,
-    ) -> Result<
-        GetObjectOutput,
-        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
-    > {
+    ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>
+    {
         Ok(self
             .s3
             .get_object()
             .bucket(bucket)
             .key(prefix)
-            .request_payer(aws_sdk_s3::types::RequestPayer::Requester)
+            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
             .send()
             .await?)
     }
@@ -62,7 +56,7 @@ impl S3Client for LakeS3Client {
         start_after: &str,
     ) -> Result<
         ListObjectsV2Output,
-        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
+        aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
     > {
         Ok(self
             .s3
@@ -70,7 +64,7 @@ impl S3Client for LakeS3Client {
             .max_keys(1000) // 1000 is the default and max value for this parameter
             .delimiter("/".to_string())
             .start_after(start_after)
-            .request_payer(aws_sdk_s3::types::RequestPayer::Requester)
+            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
             .bucket(bucket)
             .send()
             .await?)
@@ -224,11 +218,10 @@ mod test {
 
     use async_trait::async_trait;
 
-    use aws_sdk_s3::operation::get_object::builders::GetObjectOutputBuilder;
-    use aws_sdk_s3::operation::list_objects_v2::builders::ListObjectsV2OutputBuilder;
-    use aws_sdk_s3::primitives::ByteStream;
+    use aws_sdk_s3::output::{get_object_output, list_objects_v2_output};
+    use aws_sdk_s3::types::ByteStream;
 
-    use aws_smithy_types::body::SdkBody;
+    use aws_smithy_http::body::SdkBody;
 
     #[derive(Clone, Debug)]
     pub struct LakeS3Client {}
@@ -239,14 +232,12 @@ mod test {
             &self,
             _bucket: &str,
             prefix: &str,
-        ) -> Result<
-            GetObjectOutput,
-            aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
-        > {
+        ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>
+        {
             let path = format!("{}/blocks/{}", env!("CARGO_MANIFEST_DIR"), prefix);
             let file_bytes = tokio::fs::read(path).await.unwrap();
             let stream = ByteStream::new(SdkBody::from(file_bytes));
-            Ok(GetObjectOutputBuilder::default().body(stream).build())
+            Ok(get_object_output::Builder::default().body(stream).build())
         }
 
         async fn list_objects(
@@ -255,9 +246,9 @@ mod test {
             _start_after: &str,
         ) -> Result<
             ListObjectsV2Output,
-            aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
+            aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
         > {
-            Ok(ListObjectsV2OutputBuilder::default().build())
+            Ok(list_objects_v2_output::Builder::default().build())
         }
     }
 
