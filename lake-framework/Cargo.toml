@@ -26,14 +26,8 @@ near-lake-primitives = { path = "../lake-primitives", version = "0.8.0-beta.2" }
 near-lake-context-derive = { path = "../lake-context-derive", version = "0.8.0-beta.2" }
 
 [dev-dependencies]
-<<<<<<< HEAD
 aws-smithy-http = "0.60.0"
-
-=======
-
->>>>>>> 6b09538 (upgrade s3 sdk)
 aws-smithy-types = "1.0.0"
-aws-smithy-http = "0.54.0"
 # use by examples
 anyhow = "1.0.51"
 
