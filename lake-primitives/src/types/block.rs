@@ -75,16 +75,7 @@ impl Block {
     /// A reminder that `receipt_execution_outcomes` has a type [near_indexer_primitives::IndexerExecutionOutcomeWithReceipt] which is an
     /// ephemeral structure from `near-indexer-primitives` that hold a [near_primitives::views::ExecutionOutcomeView]
     /// along with the corresponding [near_primitives::views::ReceiptView].
-    pub fn receipts(&mut self) -> impl Iterator<Item = &receipts::Receipt> {
-        if self.executed_receipts.is_empty() {
-            self.executed_receipts = self
-                .streamer_message
-                .shards
-                .iter()
-                .flat_map(|shard| shard.receipt_execution_outcomes.iter())
-                .map(Into::into)
-                .collect();
-        }
+    pub fn receipts(&self) -> impl Iterator<Item = &receipts::Receipt> {
         self.executed_receipts.iter()
     }
 
@@ -92,23 +83,7 @@ impl Block {
     ///
     /// [Receipts](crate::receipts::Receipt) included on the chain but not executed yet are called "postponed",
     /// they are represented by the same structure [Receipt](crate::receipts::Receipt).
-    pub fn postponed_receipts(&mut self) -> impl Iterator<Item = &receipts::Receipt> {
-        if self.postponed_receipts.is_empty() {
-            let executed_receipts_ids: Vec<_> = self
-                .receipts()
-                .map(|receipt| receipt.receipt_id())
-                .collect();
-            self.postponed_receipts = self
-                .streamer_message
-                .shards
-                .iter()
-                .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.receipts.iter()))
-                .flatten()
-                // exclude receipts that are already executed
-                .filter(|receipt| !executed_receipts_ids.contains(&receipt.receipt_id))
-                .map(Into::into)
-                .collect();
-        }
+    pub fn postponed_receipts(&self) -> impl Iterator<Item = &receipts::Receipt> {
         self.postponed_receipts.iter()
     }
 
@@ -118,61 +93,22 @@ impl Block {
     /// the action chain has begun. Other indexer developers care about it because of the habits
     /// from other blockchains like Ethereum where a transaction is a main asset. In case of NEAR
     /// [Receipts](crate::receipts::Receipt) are more important.
-    pub fn transactions(&mut self) -> impl Iterator<Item = &transactions::Transaction> {
-        if self.transactions.is_empty() {
-            self.transactions = self
-                .streamer_message
-                .shards
-                .iter()
-                .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.transactions.iter()))
-                .flatten()
-                .map(TryInto::try_into)
-                .filter_map(|transactions| transactions.ok())
-                .collect();
-        }
+    pub fn transactions(&self) -> impl Iterator<Item = &transactions::Transaction> {
         self.transactions.iter()
     }
 
-    /// Internal method to build the cache of actions on demand
-    fn actions_from_streamer_message(&self) -> Vec<actions::Action> {
-        self.streamer_message()
-            .shards
-            .iter()
-            .flat_map(|shard| shard.receipt_execution_outcomes.iter())
-            .filter_map(|receipt_execution_outcome| {
-                actions::Action::try_vec_from_receipt_view(&receipt_execution_outcome.receipt).ok()
-            })
-            .flatten()
-            .collect()
-    }
-
     /// Returns an iterator of the [Actions](crate::actions::Action) executed in the [Block]
-    pub fn actions(&mut self) -> impl Iterator<Item = &actions::Action> {
-        if self.actions.is_empty() {
-            self.build_actions_cache();
-        }
+    pub fn actions(&self) -> impl Iterator<Item = &actions::Action> {
         self.actions.iter()
     }
 
     /// Returns an iterator of the [Events](crate::events::Event) emitted in the [Block]
-    pub fn events(&mut self) -> impl Iterator<Item = &events::Event> {
-        if self.events.is_empty() {
-            self.build_events_hashmap();
-        }
+    pub fn events(&self) -> impl Iterator<Item = &events::Event> {
         self.events.values().flatten()
     }
 
     /// Returns an iterator of the [StateChanges](crate::state_changes::StateChange) happened in the [Block]
-    pub fn state_changes(&mut self) -> impl Iterator<Item = &state_changes::StateChange> {
-        if self.state_changes.is_empty() {
-            self.state_changes = self
-                .streamer_message
-                .shards
-                .iter()
-                .flat_map(|shard| shard.state_changes.iter())
-                .map(Into::into)
-                .collect();
-        }
+    pub fn state_changes(&self) -> impl Iterator<Item = &state_changes::StateChange> {
         self.state_changes.iter()
     }
 
@@ -180,7 +116,7 @@ impl Block {
     ///
     /// **Heads up!** This methods searches for the actions in the current [Block] only.
     pub fn actions_by_receipt_id<'a>(
-        &'a mut self,
+        &'a self,
         receipt_id: &'a super::ReceiptId,
     ) -> impl Iterator<Item = &actions::Action> + 'a {
         self.actions()
@@ -188,10 +124,7 @@ impl Block {
     }
 
     /// Helper to get all the [Events](crate::events::Event) emitted by the specific [Receipt](crate::receipts::Receipt)
-    pub fn events_by_receipt_id(&mut self, receipt_id: &super::ReceiptId) -> Vec<events::Event> {
-        if self.events.is_empty() {
-            self.build_events_hashmap();
-        }
+    pub fn events_by_receipt_id(&self, receipt_id: &super::ReceiptId) -> Vec<events::Event> {
         if let Some(events) = self.events.get(receipt_id) {
             events.to_vec()
         } else {
@@ -201,7 +134,7 @@ impl Block {
 
     /// Helper to get all the [Events](crate::events::Event) emitted by the specific contract ([AccountId](crate::near_indexer_primitives::types::AccountId))
     pub fn events_by_contract_id<'a>(
-        &'a mut self,
+        &'a self,
         account_id: &'a crate::near_indexer_primitives::types::AccountId,
     ) -> impl Iterator<Item = &events::Event> + 'a {
         self.events()
@@ -209,37 +142,73 @@ impl Block {
     }
 
     /// Helper to get a specific [Receipt](crate::receipts::Receipt) by the [ReceiptId](crate::types::ReceiptId)
-    pub fn receipt_by_id(&mut self, receipt_id: &super::ReceiptId) -> Option<&receipts::Receipt> {
+    pub fn receipt_by_id(&self, receipt_id: &super::ReceiptId) -> Option<&receipts::Receipt> {
         self.receipts()
             .find(|receipt| &receipt.receipt_id() == receipt_id)
     }
 }
 
-impl Block {
-    // Internal method to build the cache of actions on demand
-    fn build_actions_cache(&mut self) {
-        self.actions = self.actions_from_streamer_message().to_vec();
-    }
-
-    // Internal method to build the cache of events on demand
-    fn build_events_hashmap(&mut self) {
-        self.events = self
-            .receipts()
-            .map(|receipt| (receipt.receipt_id(), receipt.events()))
-            .collect();
-    }
-}
-
 impl From<StreamerMessage> for Block {
     fn from(streamer_message: StreamerMessage) -> Self {
+        let executed_receipts: Vec<receipts::Receipt> = streamer_message
+            .shards
+            .iter()
+            .flat_map(|shard| shard.receipt_execution_outcomes.iter())
+            .map(Into::into)
+            .collect();
+        let postponed_receipts = streamer_message
+            .shards
+            .iter()
+            .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.receipts.iter()))
+            .flatten()
+            // exclude receipts that are already executed
+            .filter(|receipt| {
+                !executed_receipts
+                    .iter()
+                    .any(|executed_receipt| executed_receipt.receipt_id() == receipt.receipt_id)
+            })
+            .map(Into::into)
+            .collect();
+
+        let transactions: Vec<transactions::Transaction> = streamer_message
+            .shards
+            .iter()
+            .filter_map(|shard| shard.chunk.as_ref().map(|chunk| chunk.transactions.iter()))
+            .flatten()
+            .map(TryInto::try_into)
+            .filter_map(|transactions| transactions.ok())
+            .collect();
+
+        let actions: Vec<actions::Action> = streamer_message
+            .shards
+            .iter()
+            .flat_map(|shard| shard.receipt_execution_outcomes.iter())
+            .filter_map(|receipt_execution_outcome| {
+                actions::Action::try_vec_from_receipt_view(&receipt_execution_outcome.receipt).ok()
+            })
+            .flatten()
+            .collect();
+
+        let events: HashMap<super::ReceiptId, Vec<events::Event>> = executed_receipts
+            .iter()
+            .map(|receipt| (receipt.receipt_id(), receipt.events()))
+            .collect();
+
+        let state_changes: Vec<state_changes::StateChange> = streamer_message
+            .shards
+            .iter()
+            .flat_map(|shard| shard.state_changes.iter())
+            .map(Into::into)
+            .collect();
+
         Self {
+            executed_receipts,
+            postponed_receipts,
+            transactions,
+            actions,
+            events,
+            state_changes,
             streamer_message,
-            executed_receipts: vec![],
-            postponed_receipts: vec![],
-            transactions: vec![],
-            actions: vec![],
-            events: HashMap::new(),
-            state_changes: vec![],
         }
     }
 }
@@ -263,6 +232,7 @@ pub struct BlockHeader {
     latest_protocol_version: u32,
     random_value: CryptoHash,
     chunks_included: u64,
+    // TODO: replace with the corresponding Lake Primitives type eventually
     validator_proposals: Vec<views::validator_stake_view::ValidatorStakeView>,
 }
 
