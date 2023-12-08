@@ -28,6 +28,8 @@ async fn handle_block(block: near_lake_primitives::block::Block) -> anyhow::Resu
     // Indexing lines START
     let nfts: Vec<NFTReceipt> = block
         .events() // fetching all the events that occurred in the block
+        .values()
+        .flatten()
         .filter(|event| event.standard() == "nep171")
         .filter(|event| event.event() == "nft_mint") // filter them by "nft_mint" event only
         .filter_map(|event| parse_event(event))

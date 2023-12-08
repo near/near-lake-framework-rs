@@ -30,7 +30,6 @@ pub struct Block {
     postponed_receipts: Vec<receipts::Receipt>,
     transactions: Vec<transactions::Transaction>,
     actions: Vec<actions::Action>,
-    events: HashMap<super::ReceiptId, Vec<events::Event>>,
     state_changes: Vec<state_changes::StateChange>,
 }
 
@@ -102,9 +101,12 @@ impl Block {
         self.actions.iter()
     }
 
-    /// Returns an iterator of the [Events](crate::events::Event) emitted in the [Block]
-    pub fn events(&self) -> impl Iterator<Item = &events::Event> {
-        self.events.values().flatten()
+    /// Returns a Vec of [Events](crate::events::Event) emitted in the [Block]
+    pub fn events(&self) -> HashMap<super::ReceiptId, Vec<events::Event>> {
+        self.executed_receipts
+            .iter()
+            .map(|receipt| (receipt.receipt_id(), receipt.events()))
+            .collect()
     }
 
     /// Returns an iterator of the [StateChanges](crate::state_changes::StateChange) happened in the [Block]
@@ -125,7 +127,7 @@ impl Block {
 
     /// Helper to get all the [Events](crate::events::Event) emitted by the specific [Receipt](crate::receipts::Receipt)
     pub fn events_by_receipt_id(&self, receipt_id: &super::ReceiptId) -> Vec<events::Event> {
-        if let Some(events) = self.events.get(receipt_id) {
+        if let Some(events) = self.events().get(receipt_id) {
             events.to_vec()
         } else {
             vec![]
@@ -133,12 +135,17 @@ impl Block {
     }
 
     /// Helper to get all the [Events](crate::events::Event) emitted by the specific contract ([AccountId](crate::near_indexer_primitives::types::AccountId))
-    pub fn events_by_contract_id<'a>(
-        &'a self,
-        account_id: &'a crate::near_indexer_primitives::types::AccountId,
-    ) -> impl Iterator<Item = &events::Event> + 'a {
+    pub fn events_by_contract_id(
+        &self,
+        account_id: &crate::near_indexer_primitives::types::AccountId,
+    ) -> Vec<events::Event> {
+        let account_id_clone = account_id.clone(); // Clone the account_id
         self.events()
-            .filter(move |event| event.is_emitted_by_contract(&account_id.clone()))
+            .values()
+            .flatten()
+            .filter(|event| event.is_emitted_by_contract(&account_id_clone))
+            .map(Clone::clone)
+            .collect()
     }
 
     /// Helper to get a specific [Receipt](crate::receipts::Receipt) by the [ReceiptId](crate::types::ReceiptId)
@@ -189,11 +196,6 @@ impl From<StreamerMessage> for Block {
             .flatten()
             .collect();
 
-        let events: HashMap<super::ReceiptId, Vec<events::Event>> = executed_receipts
-            .iter()
-            .map(|receipt| (receipt.receipt_id(), receipt.events()))
-            .collect();
-
         let state_changes: Vec<state_changes::StateChange> = streamer_message
             .shards
             .iter()
@@ -206,7 +208,6 @@ impl From<StreamerMessage> for Block {
             postponed_receipts,
             transactions,
             actions,
-            events,
             state_changes,
             streamer_message,
         }
