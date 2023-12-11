@@ -120,10 +120,10 @@ pub enum LakeError<E> {
         #[from]
         error_message: serde_json::Error,
     },
-    #[error("AWS S3 error")]
+    #[error("AWS S3 error: {error}")]
     AwsError {
         #[from]
-        error: aws_sdk_s3::types::SdkError<E>,
+        error: aws_sdk_s3::error::SdkError<E>,
     },
     #[error("Failed to convert integer")]
     IntConversionError {

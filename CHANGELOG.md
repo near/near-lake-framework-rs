@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.3...HEAD)
 
+* Upgrade all `aws` crates to the latest version
+* Undeylying AWS error will now be printed
+
 ## [0.7.3](https://github.com/near/near-lake-framework/compare/v0.7.2...0.7.3)
 
 * Expose `s3_fetchers` module to allow using the underlying functionality in other projects
