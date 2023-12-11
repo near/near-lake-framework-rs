@@ -1,23 +1,24 @@
 use async_trait::async_trait;
 use std::str::FromStr;
 
-use aws_sdk_s3::output::{GetObjectOutput, ListObjectsV2Output};
-
 #[async_trait]
 pub trait S3Client {
     async fn get_object(
         &self,
         bucket: &str,
         prefix: &str,
-    ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>;
+    ) -> Result<
+        aws_sdk_s3::operation::get_object::GetObjectOutput,
+        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
+    >;
 
     async fn list_objects(
         &self,
         bucket: &str,
         start_after: &str,
     ) -> Result<
-        ListObjectsV2Output,
-        aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+        aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output,
+        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
     >;
 }
 
@@ -38,14 +39,16 @@ impl S3Client for LakeS3Client {
         &self,
         bucket: &str,
         prefix: &str,
-    ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>
-    {
+    ) -> Result<
+        aws_sdk_s3::operation::get_object::GetObjectOutput,
+        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
+    > {
         Ok(self
             .s3
             .get_object()
             .bucket(bucket)
             .key(prefix)
-            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
+            .request_payer(aws_sdk_s3::types::RequestPayer::Requester)
             .send()
             .await?)
     }
@@ -55,8 +58,8 @@ impl S3Client for LakeS3Client {
         bucket: &str,
         start_after: &str,
     ) -> Result<
-        ListObjectsV2Output,
-        aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+        aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output,
+        aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
     > {
         Ok(self
             .s3
@@ -64,7 +67,7 @@ impl S3Client for LakeS3Client {
             .max_keys(1000) // 1000 is the default and max value for this parameter
             .delimiter("/".to_string())
             .start_after(start_after)
-            .request_payer(aws_sdk_s3::model::RequestPayer::Requester)
+            .request_payer(aws_sdk_s3::types::RequestPayer::Requester)
             .bucket(bucket)
             .send()
             .await?)
@@ -79,7 +82,7 @@ pub(crate) async fn list_block_heights(
     start_from_block_height: crate::types::BlockHeight,
 ) -> Result<
     Vec<crate::types::BlockHeight>,
-    crate::types::LakeError<aws_sdk_s3::error::ListObjectsV2Error>,
+    crate::types::LakeError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
 > {
     tracing::debug!(
         target: crate::LAKE_FRAMEWORK,
@@ -119,7 +122,7 @@ pub(crate) async fn fetch_streamer_message(
     block_height: crate::types::BlockHeight,
 ) -> Result<
     near_indexer_primitives::StreamerMessage,
-    crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
+    crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
 > {
     let block_view = fetch_block_or_retry(lake_s3_client, s3_bucket_name, block_height).await?;
 
@@ -145,7 +148,7 @@ pub async fn fetch_block_or_retry(
     block_height: crate::types::BlockHeight,
 ) -> Result<
     near_indexer_primitives::views::BlockView,
-    crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
+    crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
 > {
     let body_bytes = loop {
         match lake_s3_client
@@ -189,7 +192,7 @@ pub async fn fetch_shard_or_retry(
     shard_id: u64,
 ) -> Result<
     near_indexer_primitives::IndexerShard,
-    crate::types::LakeError<aws_sdk_s3::error::GetObjectError>,
+    crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
 > {
     let body_bytes = loop {
         match lake_s3_client
@@ -239,10 +242,11 @@ mod test {
 
     use async_trait::async_trait;
 
-    use aws_sdk_s3::output::{get_object_output, list_objects_v2_output};
-    use aws_sdk_s3::types::ByteStream;
+    use aws_sdk_s3::operation::get_object::GetObjectOutput;
+    use aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output;
+    use aws_sdk_s3::primitives::ByteStream;
 
-    use aws_smithy_http::body::SdkBody;
+    use aws_smithy_types::body::SdkBody;
 
     #[derive(Clone, Debug)]
     pub struct LakeS3Client {}
@@ -251,25 +255,27 @@ mod test {
     impl S3Client for LakeS3Client {
         async fn get_object(
             &self,
-            _bucket: &str,
+            bucket: &str,
             prefix: &str,
-        ) -> Result<GetObjectOutput, aws_sdk_s3::types::SdkError<aws_sdk_s3::error::GetObjectError>>
-        {
+        ) -> Result<
+            aws_sdk_s3::operation::get_object::GetObjectOutput,
+            aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>,
+        > {
             let path = format!("{}/blocks/{}", env!("CARGO_MANIFEST_DIR"), prefix);
             let file_bytes = tokio::fs::read(path).await.unwrap();
             let stream = ByteStream::new(SdkBody::from(file_bytes));
-            Ok(get_object_output::Builder::default().body(stream).build())
+            Ok(GetObjectOutput::builder().body(stream).build())
         }
 
         async fn list_objects(
             &self,
-            _bucket: &str,
-            _start_after: &str,
+            bucket: &str,
+            start_after: &str,
         ) -> Result<
-            ListObjectsV2Output,
-            aws_sdk_s3::types::SdkError<aws_sdk_s3::error::ListObjectsV2Error>,
+            aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output,
+            aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,
         > {
-            Ok(list_objects_v2_output::Builder::default().build())
+            Ok(ListObjectsV2Output::builder().build())
         }
     }
 

@@ -123,7 +123,7 @@ pub enum LakeError<E> {
     #[error("AWS S3 error")]
     AwsError {
         #[from]
-        error: aws_sdk_s3::types::SdkError<E>,
+        error: aws_sdk_s3::error::SdkError<E>,
     },
     #[error("Failed to convert integer")]
     IntConversionError {
