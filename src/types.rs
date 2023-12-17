@@ -120,7 +120,7 @@ pub enum LakeError<E> {
         #[from]
         error_message: serde_json::Error,
     },
-    #[error("AWS S3 error: {error}")]
+    #[error("AWS S3 error: {error:?}")]
     AwsError {
         #[from]
         error: aws_sdk_s3::error::SdkError<E>,
