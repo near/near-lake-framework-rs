@@ -125,9 +125,14 @@ pub enum LakeError<E> {
         #[from]
         error: aws_sdk_s3::error::SdkError<E>,
     },
-    #[error("Failed to convert integer")]
+    #[error("Failed to convert integer: {error}")]
     IntConversionError {
         #[from]
         error: std::num::TryFromIntError,
+    },
+    #[error("AWS Smithy byte_stream error: {error}")]
+    AwsSmithyError {
+        #[from]
+        error: aws_smithy_types::byte_stream::error::Error,
     },
 }

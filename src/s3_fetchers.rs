@@ -142,6 +142,28 @@ pub(crate) async fn fetch_streamer_message(
 }
 
 /// Fetches the block data JSON from AWS S3 and returns the `BlockView`
+pub async fn fetch_block(
+    lake_s3_client: &impl S3Client,
+    s3_bucket_name: &str,
+    block_height: crate::types::BlockHeight,
+) -> Result<
+    near_indexer_primitives::views::BlockView,
+    crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
+> {
+    let body_bytes = lake_s3_client
+        .get_object(s3_bucket_name, &format!("{:0>12}/block.json", block_height))
+        .await?
+        .body
+        .collect()
+        .await?
+        .into_bytes();
+
+    Ok(serde_json::from_slice::<
+        near_indexer_primitives::views::BlockView,
+    >(body_bytes.as_ref())?)
+}
+
+/// Fetches the block data JSON from AWS S3 and returns the `BlockView` retrying until it succeeds (indefinitely)
 pub async fn fetch_block_or_retry(
     lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
@@ -150,37 +172,62 @@ pub async fn fetch_block_or_retry(
     near_indexer_primitives::views::BlockView,
     crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
 > {
-    let body_bytes = loop {
-        match lake_s3_client
-            .get_object(s3_bucket_name, &format!("{:0>12}/block.json", block_height))
-            .await
-        {
-            Ok(response) => {
-                match response.body.collect().await {
-                    Ok(bytes_stream) => break bytes_stream.into_bytes(),
-                    Err(err) => {
-                        tracing::debug!(
-                            target: crate::LAKE_FRAMEWORK,
-                            "Failed to read bytes from the block #{:0>12} response. Retrying immediately.\n{:#?}",
-                            block_height,
-                            err,
-                        );
-                    }
-                };
-            }
-            Err(err) => {
-                tracing::debug!(
-                    target: crate::LAKE_FRAMEWORK,
-                    "Failed to get {:0>12}/block.json. Retrying immediately\n{:#?}",
-                    block_height,
-                    err
-                );
-            }
-        };
-    };
+    loop {
+        match fetch_block(lake_s3_client, s3_bucket_name, block_height).await {
+            Ok(block_view) => break Ok(block_view),
+            Err(err) => match err {
+                crate::types::LakeError::AwsError { .. } => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Block #{:0>12} not found. Retrying in immediately...\n{:#?}",
+                        block_height,
+                        err,
+                    );
+                }
+                crate::types::LakeError::AwsSmithyError { .. } => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Failed to read bytes from the block #{:0>12} response. Retrying immediately.\n{:#?}",
+                        block_height,
+                        err,
+                    );
+                }
+                _ => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Failed to fetch block #{}, retrying immediately\n{:#?}",
+                        block_height,
+                        err
+                    );
+                }
+            },
+        }
+    }
+}
+
+/// Fetches the shard data JSON from AWS S3 and returns the `IndexerShard`
+pub async fn fetch_shard(
+    lake_s3_client: &impl S3Client,
+    s3_bucket_name: &str,
+    block_height: crate::types::BlockHeight,
+    shard_id: u64,
+) -> Result<
+    near_indexer_primitives::IndexerShard,
+    crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
+> {
+    let body_bytes = lake_s3_client
+        .get_object(
+            s3_bucket_name,
+            &format!("{:0>12}/shard_{}.json", block_height, shard_id),
+        )
+        .await?
+        .body
+        .collect()
+        .await?
+        .into_bytes();
 
     Ok(serde_json::from_slice::<
-        near_indexer_primitives::views::BlockView,
+        near_indexer_primitives::IndexerShard,
     >(body_bytes.as_ref())?)
 }
 
@@ -194,46 +241,40 @@ pub async fn fetch_shard_or_retry(
     near_indexer_primitives::IndexerShard,
     crate::types::LakeError<aws_sdk_s3::operation::get_object::GetObjectError>,
 > {
-    let body_bytes = loop {
-        match lake_s3_client
-            .get_object(
-                s3_bucket_name,
-                &format!("{:0>12}/shard_{}.json", block_height, shard_id),
-            )
-            .await
-        {
-            Ok(response) => {
-                let body_bytes = match response.body.collect().await {
-                    Ok(body) => body.into_bytes(),
-                    Err(err) => {
-                        tracing::debug!(
-                            target: crate::LAKE_FRAMEWORK,
-                            "Failed to read the {:0>12}/shard_{}.json. Retrying in 1s...\n {:#?}",
-                            block_height,
-                            shard_id,
-                            err,
-                        );
-                        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                        continue;
-                    }
-                };
-
-                break body_bytes;
-            }
-            Err(err) => {
-                tracing::debug!(
-                    target: crate::LAKE_FRAMEWORK,
-                    "Failed to fetch shard #{}, retrying immediately\n{:#?}",
-                    shard_id,
-                    err
-                );
-            }
+    loop {
+        match fetch_shard(lake_s3_client, s3_bucket_name, block_height, shard_id).await {
+            Ok(shard) => break Ok(shard),
+            Err(err) => match err {
+                crate::types::LakeError::AwsError { .. } => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Shard {} of block #{:0>12} not found. Retrying in immediately...\n{:#?}",
+                        shard_id,
+                        block_height,
+                        err,
+                    );
+                }
+                crate::types::LakeError::AwsSmithyError { .. } => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Failed to read bytes from the shard {} of block #{:0>12} response. Retrying immediately.\n{:#?}",
+                        shard_id,
+                        block_height,
+                        err,
+                    );
+                }
+                _ => {
+                    tracing::debug!(
+                        target: crate::LAKE_FRAMEWORK,
+                        "Failed to fetch shard {} of block #{}, retrying immediately\n{:#?}",
+                        shard_id,
+                        block_height,
+                        err
+                    );
+                }
+            },
         }
-    };
-
-    Ok(serde_json::from_slice::<
-        near_indexer_primitives::IndexerShard,
-    >(body_bytes.as_ref())?)
+    }
 }
 
 #[cfg(test)]
@@ -255,7 +296,7 @@ mod test {
     impl S3Client for LakeS3Client {
         async fn get_object(
             &self,
-            bucket: &str,
+            _bucket: &str,
             prefix: &str,
         ) -> Result<
             aws_sdk_s3::operation::get_object::GetObjectOutput,
@@ -269,8 +310,8 @@ mod test {
 
         async fn list_objects(
             &self,
-            bucket: &str,
-            start_after: &str,
+            _bucket: &str,
+            _start_after: &str,
         ) -> Result<
             aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Output,
             aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>,

@@ -12,7 +12,7 @@ rust-version = "1.58.1"
 
 # cargo-workspaces
 [workspace.metadata.workspaces]
-version = "0.7.4"
+version = "0.7.5"
 
 [dependencies]
 anyhow = "1.0.51"
@@ -20,6 +20,7 @@ aws-config = { version = "1.0.0", features = ["behavior-version-latest"] }
 aws-types = "1.0.0"
 aws-credential-types = "1.0.0"
 aws-sdk-s3 = "0.39.1"
+aws-smithy-types = "1.0.1"
 async-stream = "0.3.3"
 async-trait = "0.1.64"
 derive_builder = "0.11.2"
@@ -35,7 +36,6 @@ near-indexer-primitives = "0.17"
 
 [dev-dependencies]
 aws-smithy-http = "0.60.0"
-aws-smithy-types = "1.0.1"
 
 [lib]
 doctest = false
