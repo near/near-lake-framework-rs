@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.4...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.5...HEAD)
 
-## [0.7.3](https://github.com/near/near-lake-framework/compare/v0.7.2...0.7.4)
+## [0.7.5](https://github.com/near/near-lake-framework/compare/v0.7.3...0.7.5)
+
+* Refactor `s3_fetchers` module to allow exposing the underlying functionality:
+  * `s3_fetchers::fetch_block` (without retrying)
+  * `s3_fetchers::fetch_shard` (without retrying)
+
+## [0.7.4](https://github.com/near/near-lake-framework/compare/v0.7.2...0.7.4)
 
 * Upgrade all `aws` crates to the latest version
 * Undeylying AWS error will now be printed
