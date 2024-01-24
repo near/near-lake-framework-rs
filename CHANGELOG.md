@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.5...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.6...HEAD)
+
+## [0.7.6](https://github.com/near/near-lake-framework/compare/v0.7.5...0.7.6)
+
+* Upgrade `near-indexer-primitives` to `0.20.0`
+* Upgrade dependencies versions to the latest
 
 ## [0.7.5](https://github.com/near/near-lake-framework/compare/v0.7.3...0.7.5)
 
