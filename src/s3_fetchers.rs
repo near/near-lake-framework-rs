@@ -76,7 +76,7 @@ impl S3Client for LakeS3Client {
 
 /// Queries the list of the objects in the bucket, grouped by "/" delimiter.
 /// Returns the list of block heights that can be fetched
-pub(crate) async fn list_block_heights(
+pub async fn list_block_heights(
     lake_s3_client: &impl S3Client,
     s3_bucket_name: &str,
     start_from_block_height: crate::types::BlockHeight,
