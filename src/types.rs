@@ -1,3 +1,5 @@
+use crate::s3_client::{GetObjectBytesError, ListCommonPrefixesError, S3Client};
+
 /// Type alias represents the block height
 pub type BlockHeight = u64;
 
@@ -137,25 +139,25 @@ impl LakeConfigBuilder {
 
 #[allow(clippy::enum_variant_names)]
 #[derive(thiserror::Error, Debug)]
-pub enum LakeError<E> {
+pub enum LakeError {
     #[error("Failed to parse structure from JSON: {error_message:?}")]
     ParseError {
         #[from]
         error_message: serde_json::Error,
     },
-    #[error("AWS S3 error: {error:?}")]
-    AwsError {
+    #[error("Get object error: {error:?}")]
+    S3GetError {
         #[from]
-        error: aws_sdk_s3::error::SdkError<E>,
+        error: GetObjectBytesError,
+    },
+    #[error("List objects error: {error:?}")]
+    S3ListError {
+        #[from]
+        error: ListCommonPrefixesError,
     },
     #[error("Failed to convert integer: {error:?}")]
     IntConversionError {
         #[from]
         error: std::num::TryFromIntError,
-    },
-    #[error("AWS Smithy byte_stream error: {error:?}")]
-    AwsSmithyError {
-        #[from]
-        error: aws_smithy_types::byte_stream::error::Error,
     },
 }
