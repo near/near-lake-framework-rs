@@ -155,7 +155,7 @@ pub async fn fetch_block_or_retry(
                     {
                         tracing::debug!(
                             target: crate::LAKE_FRAMEWORK,
-                            "Block #{:0>12} not found. Retrying in immediately...\n{:#?}",
+                            "Block #{:0>12} not found. Retrying immediately...\n{:#?}",
                             block_height,
                             get_object_error,
                         );
