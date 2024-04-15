@@ -34,8 +34,5 @@ tracing = "0.1.40"
 
 near-indexer-primitives = "0.20.0"
 
-[dev-dependencies]
-aws-smithy-http = "0.60.3"
-
 [lib]
 doctest = false
