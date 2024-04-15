@@ -5,7 +5,7 @@ use async_trait::async_trait;
 
 pub type S3ClientError = Arc<dyn Error + Send + Sync + 'static>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, Clone)]
 pub struct GetObjectBytesError(pub S3ClientError);
 
 impl std::ops::Deref for GetObjectBytesError {
@@ -38,7 +38,7 @@ impl From<aws_smithy_types::byte_stream::error::Error> for GetObjectBytesError {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, Clone)]
 pub struct ListCommonPrefixesError(pub S3ClientError);
 
 impl std::fmt::Display for ListCommonPrefixesError {
