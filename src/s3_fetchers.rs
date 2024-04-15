@@ -13,9 +13,7 @@ impl LakeS3Client {
     pub fn new(s3: aws_sdk_s3::Client) -> Self {
         Self { s3 }
     }
-}
 
-impl LakeS3Client {
     pub fn from_conf(config: aws_sdk_s3::config::Config) -> Self {
         let s3_client = aws_sdk_s3::Client::from_conf(config);
 
