@@ -220,7 +220,7 @@ pub async fn fetch_shard_or_retry(
                     {
                         tracing::debug!(
                             target: crate::LAKE_FRAMEWORK,
-                            "Shard {} of block #{:0>12} not found. Retrying in immediately...\n{:#?}",
+                            "Shard {} of block #{:0>12} not found. Retrying immediately...\n{:#?}",
                             shard_id,
                             block_height,
                             list_objects_error,
