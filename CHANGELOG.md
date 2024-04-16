@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.7...HEAD)
 
+* Expose `s3_client::S3Client` trait so that custom S3 client implementations can be configured via `LakeConfigBuilder::s3_client`
+
+### Breaking Change
+
+* Errors returned from public `s3_fetcher` methods have changed slightly to support the newly exposed `S3Client`. As these methods serve a rare use-case this is only a minor bump.
+
 ## [0.7.7](https://github.com/near/near-lake-framework/compare/v0.7.6...0.7.7)
 
 * Refactor `s3_fetchers` module to allow use `list_block_heights` outside of the framework
