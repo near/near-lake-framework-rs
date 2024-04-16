@@ -1,3 +1,5 @@
+use crate::s3_client::{GetObjectBytesError, ListCommonPrefixesError, S3Client};
+
 /// Type alias represents the block height
 pub type BlockHeight = u64;
 
@@ -15,8 +17,8 @@ pub type BlockHeight = u64;
 ///        .expect("Failed to build LakeConfig");
 /// # }
 /// ```
-#[derive(Default, Builder, Debug)]
-#[builder(pattern = "owned")]
+#[derive(Default, Builder)]
+#[builder(pattern = "owned", build_fn(validate = "Self::validate"))]
 pub struct LakeConfig {
     /// AWS S3 Bucket name
     #[builder(setter(into))]
@@ -50,13 +52,36 @@ pub struct LakeConfig {
     ///         .expect("Failed to build LakeConfig");
     /// # }
     /// ```
+    ///
+    /// This field is mutually exclusive with [LakeConfigBuilder::s3_client].
     #[builder(setter(strip_option), default)]
     pub s3_config: Option<aws_sdk_s3::config::Config>,
+    /// Provide a custom S3 client which implements the s3_fetchers::S3Client trait. This is useful
+    /// if you need more control over the requests made to S3, e.g. you want to add cache.
+    ///
+    /// This field is mutually exclusive with [LakeConfigBuilder::s3_config].
+    #[builder(setter(strip_option, custom), default)]
+    pub(crate) s3_client: Option<Box<dyn S3Client>>,
     #[builder(default = "100")]
     pub(crate) blocks_preload_pool_size: usize,
 }
 
 impl LakeConfigBuilder {
+    fn validate(&self) -> Result<(), String> {
+        if self.s3_config.is_some() && self.s3_client.is_some() {
+            return Err("Cannot provide both s3_config and s3_client".to_string());
+        }
+
+        Ok(())
+    }
+
+    pub fn s3_client<T: S3Client + 'static>(self, s3_client: T) -> Self {
+        Self {
+            s3_client: Some(Some(Box::new(s3_client))),
+            ..self
+        }
+    }
+
     /// Shortcut to set up [LakeConfigBuilder::s3_bucket_name] for mainnet
     /// ```
     /// use near_lake_framework::LakeConfigBuilder;
@@ -114,25 +139,25 @@ impl LakeConfigBuilder {
 
 #[allow(clippy::enum_variant_names)]
 #[derive(thiserror::Error, Debug)]
-pub enum LakeError<E> {
+pub enum LakeError {
     #[error("Failed to parse structure from JSON: {error_message:?}")]
     ParseError {
         #[from]
         error_message: serde_json::Error,
     },
-    #[error("AWS S3 error: {error:?}")]
-    AwsError {
+    #[error("Get object error: {error:?}")]
+    S3GetError {
         #[from]
-        error: aws_sdk_s3::error::SdkError<E>,
+        error: GetObjectBytesError,
+    },
+    #[error("List objects error: {error:?}")]
+    S3ListError {
+        #[from]
+        error: ListCommonPrefixesError,
     },
     #[error("Failed to convert integer: {error:?}")]
     IntConversionError {
         #[from]
         error: std::num::TryFromIntError,
-    },
-    #[error("AWS Smithy byte_stream error: {error:?}")]
-    AwsSmithyError {
-        #[from]
-        error: aws_smithy_types::byte_stream::error::Error,
     },
 }
