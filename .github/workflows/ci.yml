@@ -15,9 +15,13 @@ jobs:
   check:
 
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
+    - name: install stable toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
     - name: Run check
       run: cargo check
 
@@ -27,6 +31,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install stable toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
     - name: Run check
       run: cargo test
 
