@@ -9,10 +9,10 @@ repository.workspace = true
 
 [dependencies]
 anyhow = "1.0.51"
-near-crypto = "0.17.0"
-near-primitives-core = "0.17.0"
-near-primitives = "0.17.0"
-near-indexer-primitives = "0.17.0"
+near-crypto = "0.21.2"
+near-primitives-core = "0.21.2"
+near-primitives = "0.21.2"
+near-indexer-primitives = "0.21.2"
 paste = "1.0.12"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.75"

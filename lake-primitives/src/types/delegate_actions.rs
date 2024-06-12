@@ -216,13 +216,13 @@ impl DelegateDeleteAccount {
 impl DelegateAction {
     // Tries to convert a `near_primitives::delegate_action::DelegateAction` into a [Vec<DelegateAction>].
     pub fn try_from_delegate_action(
-        delegate_action: &near_primitives::delegate_action::DelegateAction,
+        delegate_action: &near_primitives::action::delegate::DelegateAction,
     ) -> Result<Vec<Self>, &'static str> {
         let mut actions = Vec::with_capacity(delegate_action.actions.len());
 
         for nearcore_action in delegate_action.clone().actions {
             let action = match views::ActionView::from(
-                <near_primitives::delegate_action::NonDelegateAction as Into<
+                <near_primitives::action::delegate::NonDelegateAction as Into<
                     near_primitives::transaction::Action,
                 >>::into(nearcore_action),
             ) {
