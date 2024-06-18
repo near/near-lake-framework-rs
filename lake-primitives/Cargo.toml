@@ -9,10 +9,10 @@ repository.workspace = true
 
 [dependencies]
 anyhow = "1.0.51"
-near-crypto = "0.22"
-near-primitives-core = "0.22"
-near-primitives = "0.22"
-near-indexer-primitives = "0.22"
+near-crypto = { git = "https://github.com/near/nearcore", rev = "08941a3c070eca2e6163a4ad1eaed1f0d3ee233c" }
+near-primitives-core = { git = "https://github.com/near/nearcore", rev = "08941a3c070eca2e6163a4ad1eaed1f0d3ee233c" }
+near-primitives = { git = "https://github.com/near/nearcore", rev = "08941a3c070eca2e6163a4ad1eaed1f0d3ee233c" }
+near-indexer-primitives = { git = "https://github.com/near/nearcore", rev = "08941a3c070eca2e6163a4ad1eaed1f0d3ee233c" }
 paste = "1.0.12"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.75"
