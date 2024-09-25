@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use async_trait::async_trait;
 
-use crate::s3_client::{GetObjectBytesError, ListCommonPrefixesError, S3Client};
+use super::{types, client::{GetObjectBytesError, ListCommonPrefixesError, S3Client}};
 
 #[derive(Clone, Debug)]
 pub struct LakeS3Client {
@@ -78,8 +78,8 @@ impl S3Client for LakeS3Client {
 pub async fn list_block_heights(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    start_from_block_height: crate::types::BlockHeight,
-) -> Result<Vec<crate::types::BlockHeight>, crate::types::LakeError> {
+    start_from_block_height: types::BlockHeight,
+) -> Result<Vec<types::BlockHeight>, types::LakeError> {
     tracing::debug!(
         target: crate::LAKE_FRAMEWORK,
         "Fetching block heights from S3, after #{}...",
@@ -105,8 +105,8 @@ pub async fn list_block_heights(
 pub(crate) async fn fetch_streamer_message(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    block_height: crate::types::BlockHeight,
-) -> Result<near_indexer_primitives::StreamerMessage, crate::types::LakeError> {
+    block_height: types::BlockHeight,
+) -> Result<near_indexer_primitives::StreamerMessage, types::LakeError> {
     let block_view = fetch_block_or_retry(lake_s3_client, s3_bucket_name, block_height).await?;
 
     let fetch_shards_futures = (0..block_view.chunks.len() as u64)
@@ -128,8 +128,8 @@ pub(crate) async fn fetch_streamer_message(
 pub async fn fetch_block(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    block_height: crate::types::BlockHeight,
-) -> Result<near_indexer_primitives::views::BlockView, crate::types::LakeError> {
+    block_height: types::BlockHeight,
+) -> Result<near_indexer_primitives::views::BlockView, types::LakeError> {
     let bytes = lake_s3_client
         .get_object_bytes(s3_bucket_name, &format!("{:0>12}/block.json", block_height))
         .await?;
@@ -143,13 +143,13 @@ pub async fn fetch_block(
 pub async fn fetch_block_or_retry(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    block_height: crate::types::BlockHeight,
-) -> Result<near_indexer_primitives::views::BlockView, crate::types::LakeError> {
+    block_height: types::BlockHeight,
+) -> Result<near_indexer_primitives::views::BlockView, types::LakeError> {
     loop {
         match fetch_block(lake_s3_client, s3_bucket_name, block_height).await {
             Ok(block_view) => break Ok(block_view),
             Err(err) => {
-                if let crate::types::LakeError::S3GetError { ref error } = err {
+                if let types::LakeError::S3GetError { ref error } = err {
                     if let Some(get_object_error) =
                         error.downcast_ref::<aws_sdk_s3::operation::get_object::GetObjectError>()
                     {
@@ -188,9 +188,9 @@ pub async fn fetch_block_or_retry(
 pub async fn fetch_shard(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    block_height: crate::types::BlockHeight,
+    block_height: types::BlockHeight,
     shard_id: u64,
-) -> Result<near_indexer_primitives::IndexerShard, crate::types::LakeError> {
+) -> Result<near_indexer_primitives::IndexerShard, types::LakeError> {
     let bytes = lake_s3_client
         .get_object_bytes(
             s3_bucket_name,
@@ -207,14 +207,14 @@ pub async fn fetch_shard(
 pub async fn fetch_shard_or_retry(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
-    block_height: crate::types::BlockHeight,
+    block_height: types::BlockHeight,
     shard_id: u64,
-) -> Result<near_indexer_primitives::IndexerShard, crate::types::LakeError> {
+) -> Result<near_indexer_primitives::IndexerShard, types::LakeError> {
     loop {
         match fetch_shard(lake_s3_client, s3_bucket_name, block_height, shard_id).await {
             Ok(shard) => break Ok(shard),
             Err(err) => {
-                if let crate::types::LakeError::S3ListError { ref error } = err {
+                if let types::LakeError::S3ListError { ref error } = err {
                     if let Some(list_objects_error) =
                         error.downcast_ref::<aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error>()
                     {
