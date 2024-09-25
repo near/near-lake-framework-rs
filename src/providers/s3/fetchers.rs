@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use async_trait::async_trait;
 
-use super::{types, client::{GetObjectBytesError, ListCommonPrefixesError, S3Client}};
+use super::{
+    client::{GetObjectBytesError, ListCommonPrefixesError, S3Client},
+    types,
+};
 
 #[derive(Clone, Debug)]
 pub struct LakeS3Client {
