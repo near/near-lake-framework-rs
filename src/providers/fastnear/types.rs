@@ -5,7 +5,7 @@ pub type BlockHeight = u64;
 /// NB! Consider using [`FastNearConfigBuilder`]
 /// Building the `FastNearConfig` example:
 /// ```
-/// use fastnear_data_framework::FastNearConfigBuilder;
+/// use near_lake_framework::FastNearConfigBuilder;
 ///
 /// # async fn main() {
 ///    let config = FastNearConfigBuilder::default()
@@ -34,7 +34,7 @@ pub struct FastNearConfig {
 impl FastNearConfigBuilder {
     /// Shortcut to set up [FastNearConfigBuilder] for mainnet
     /// ```
-    /// use fastnear_data_framework::FastNearConfigBuilder;
+    /// use near_lake_framework::FastNearConfigBuilder;
     ///
     /// # async fn main() {
     ///    let config = FastNearConfigBuilder::default()
@@ -51,7 +51,7 @@ impl FastNearConfigBuilder {
 
     /// Shortcut to set up [FastNearConfigBuilder] for testnet
     /// ```
-    /// use fastnear_data_framework::FastNearConfigBuilder;
+    /// use near_lake_framework::FastNearConfigBuilder;
     ///
     /// # async fn main() {
     ///    let config = FastNearConfigBuilder::default()
@@ -69,7 +69,7 @@ impl FastNearConfigBuilder {
 
 /// Shortcut to set up [FastNearConfigBuilder] num_threads
 /// ```
-/// use fastnear_data_framework::FastNearConfigBuilder;
+/// use near_lake_framework::FastNearConfigBuilder;
 ///
 /// # async fn main() {
 ///    let config = FastNearConfigBuilder::default()

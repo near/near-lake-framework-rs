@@ -291,7 +291,6 @@ mod test {
     #[tokio::test]
     async fn deserializes_meta_transactions() {
         let lake_client = LakeS3Client {};
-
         let streamer_message =
             fetch_streamer_message(&lake_client, "near-lake-data-mainnet", 879765)
                 .await

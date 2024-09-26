@@ -20,7 +20,7 @@
 //!        .expect("Failed to build LakeConfig");
 //!
 //!    // instantiate the NEAR Lake Framework Stream
-//!    let (sender, stream) = near_lake_framework::streamer(config);
+//!    let (sender, stream) = near_lake_framework::streamer(config.into());
 //!
 //!    // read the stream events and pass them to a handler function with
 //!    // concurrency 1
@@ -266,7 +266,7 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 ///        .build()
 ///        .expect("Failed to build LakeConfig");
 ///
-///     let (_, stream) = near_lake_framework::streamer(config);
+///     let (_, stream) = near_lake_framework::streamer(config.into());
 ///
 ///     while let Some(streamer_message) = stream.recv().await {
 ///         eprintln!("{:#?}", streamer_message);
