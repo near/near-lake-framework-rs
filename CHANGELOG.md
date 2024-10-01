@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.9...HEAD)
+## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.10...HEAD)
+
+## [0.7.10](https://github.com/near/near-lake-framework/compare/v0.7.9...0.7.10)
+
+* Upgrade `near-indexer-primitives` to `0.27.0` (nearcore-2.3.0)
+* Added new provider `fastnear` - a new way to get the data from NEAR Protocol. It is a separate service that provides the data in a more efficient way. Check the [FastNear](https://fastnear.com/) provider for more details.
+
+### Breaking Change
+
+* `s3_fetchers` rename to `fetchers` and move to the `providers` module. New usage example:
+  ```rust
+  use near_lake_framework::providers::s3::fetchers::fetch_streamer_message;
+  use near_lake_framework::providers::fastnear::fetchers::fetch_streamer_message;
+  ```
+* `s3_client` rename to `client` and move to the `providers` module. New usage example:
+  ```rust
+  use near_lake_framework::providers::s3::client::S3Client;
+  use near_lake_framework::providers::fastnear::client::FastNearClient;
+  ```
 
 ## [0.7.9](https://github.com/near/near-lake-framework/compare/v0.7.7...0.7.9)
 

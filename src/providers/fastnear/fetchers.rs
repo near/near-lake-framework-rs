@@ -1,6 +1,8 @@
 use super::client::FastNearClient;
 use super::types;
 
+/// Fetches the last block from the fastenar
+/// Returns `near_indexer_primitives::StreamerMessage`
 pub async fn fetch_last_block(client: &FastNearClient) -> near_indexer_primitives::StreamerMessage {
     client
         .fetch_until_success("/v0/last_block/final")
@@ -8,6 +10,19 @@ pub async fn fetch_last_block(client: &FastNearClient) -> near_indexer_primitive
         .expect("Failed to fetch last block")
 }
 
+/// Fetches the optimistic block from the fastenar
+/// Returns `near_indexer_primitives::StreamerMessage`
+pub async fn fetch_optimistic_block(
+    client: &FastNearClient,
+) -> near_indexer_primitives::StreamerMessage {
+    client
+        .fetch_until_success("/v0/last_block/optimistic")
+        .await
+        .expect("Failed to fetch optimistic block")
+}
+
+/// Fetches the genesis block from the fastenar
+/// Returns `near_indexer_primitives::StreamerMessage`
 pub async fn fetch_first_block(
     client: &FastNearClient,
 ) -> near_indexer_primitives::StreamerMessage {
@@ -17,6 +32,9 @@ pub async fn fetch_first_block(
         .expect("Failed to fetch first block")
 }
 
+/// Fetches the block data from the fastenar by block height
+/// Returns the result in `Option<near_indexer_primitives::StreamerMessage>`
+/// If the block does not exist, returns `None`
 pub async fn fetch_streamer_message(
     client: &FastNearClient,
     block_height: types::BlockHeight,
@@ -26,6 +44,9 @@ pub async fn fetch_streamer_message(
         .await
 }
 
+/// Fetches the block from the fastenar by block height
+/// Returns the result in `near_indexer_primitives::views::BlockView`
+/// If the block does not exist, returns an error
 pub async fn fetch_block(
     client: &FastNearClient,
     block_height: types::BlockHeight,
@@ -41,6 +62,9 @@ pub async fn fetch_block(
     }
 }
 
+/// Fetches the block from the fastenar by block height
+/// Returns the result in `near_indexer_primitives::views::BlockView`
+/// If the block does not exist, retries fetching the block
 pub async fn fetch_block_or_retry(
     client: &FastNearClient,
     block_height: types::BlockHeight,
@@ -58,6 +82,9 @@ pub async fn fetch_block_or_retry(
     }
 }
 
+/// Fetches the shard from the fastenar by block height and shard id
+/// Returns the result in `near_indexer_primitives::IndexerShard`
+/// If the block does not exist, returns an error
 pub async fn fetch_shard(
     client: &FastNearClient,
     block_height: types::BlockHeight,
@@ -90,6 +117,9 @@ pub async fn fetch_shard(
     }
 }
 
+/// Fetches the shard from the fastenar by block height and shard id
+/// Returns the result in `near_indexer_primitives::IndexerShard`
+/// If the block does not exist, retries fetching the block
 pub async fn fetch_shard_or_retry(
     client: &FastNearClient,
     block_height: types::BlockHeight,

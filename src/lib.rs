@@ -20,7 +20,7 @@
 //!        .expect("Failed to build LakeConfig");
 //!
 //!    // instantiate the NEAR Lake Framework Stream
-//!    let (sender, stream) = near_lake_framework::streamer(config.into());
+//!    let (sender, stream) = near_lake_framework::streamer(config);
 //!
 //!    // read the stream events and pass them to a handler function with
 //!    // concurrency 1
@@ -233,6 +233,39 @@
 //!
 //! The price depends on the number of shards
 //!
+//! ### FastNear provider
+//!
+//! FastNear provider is a new way to get the data from NEAR Protocol. It is a separate service that provides the data in a more efficient way.
+//!
+//! How to use it:
+//!
+//! ## Example
+//!
+//! ```rust
+//! use futures::StreamExt;
+//! use near_lake_framework::FastNearConfigBuilder;
+//!
+//! #[tokio::main]
+//! # async fn main() {
+//!    let config = FastNearConfigBuilder::default()
+//!        .testnet()
+//!        .start_block_height(82422587)
+//!        .build()
+//!        .expect("Failed to build LakeConfig");
+//!
+//!     let (_, stream) = near_lake_framework::streamer(config);
+//!
+//!     while let Some(streamer_message) = stream.recv().await {
+//!         eprintln!("{:#?}", streamer_message);
+//!     }
+//! # }
+//! ```
+//!
+//! How to migrate from Lake to FastNear:
+//!
+//! - Replace `LakeConfigBuilder` with `FastNearConfigBuilder`
+//! - Replace `LakeConfig` with `FastNearConfig`
+//!
 //! ## Future plans
 //!
 //! We use Milestones with clearly defined acceptance criteria:
@@ -266,19 +299,20 @@ pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 ///        .build()
 ///        .expect("Failed to build LakeConfig");
 ///
-///     let (_, stream) = near_lake_framework::streamer(config.into());
+///     let (_, stream) = near_lake_framework::streamer(config);
 ///
 ///     while let Some(streamer_message) = stream.recv().await {
 ///         eprintln!("{:#?}", streamer_message);
 ///     }
 /// # }
 /// ```
-pub fn streamer(
-    config: providers::NearLakeFrameworkConfig,
+pub fn streamer<T: Into<providers::NearLakeFrameworkConfig>>(
+    config: T,
 ) -> (
     tokio::task::JoinHandle<Result<(), anyhow::Error>>,
     tokio::sync::mpsc::Receiver<near_indexer_primitives::StreamerMessage>,
 ) {
+    let config: providers::NearLakeFrameworkConfig = config.into();
     let (sender, receiver) = tokio::sync::mpsc::channel(config.blocks_preload_pool_size());
     match config {
         providers::NearLakeFrameworkConfig::Lake(config) => {

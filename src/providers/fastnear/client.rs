@@ -1,5 +1,7 @@
 use super::types;
 
+/// FastNearClient is a client to interact with the FastNear API
+/// It is used to fetch the blocks from the FastNear
 #[derive(Clone, Debug)]
 pub struct FastNearClient {
     client: reqwest::Client,
@@ -14,6 +16,10 @@ impl FastNearClient {
         }
     }
 
+    /// Fetches the block from the FastNear API
+    /// Returns the result in `Option<near_indexer_primitives::StreamerMessage>`
+    /// If the block does not exist, returns `None`
+    /// If the request fails, returns an error
     pub async fn fetch(
         &self,
         url_path: &str,
@@ -31,6 +37,10 @@ impl FastNearClient {
         }
     }
 
+    /// Fetches the block from the FastNear API until it succeeds
+    /// It retries fetching the block until it gets a successful response
+    /// Returns the result in `Option<near_indexer_primitives::StreamerMessage>`
+    /// If the block does not exist, returns `None`
     pub async fn fetch_until_success(
         &self,
         url_path: &str,

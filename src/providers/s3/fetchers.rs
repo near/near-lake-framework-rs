@@ -105,7 +105,7 @@ pub async fn list_block_heights(
 /// - shard_N.json
 /// Reads the content of the objects and parses as a JSON.
 /// Returns the result in `near_indexer_primitives::StreamerMessage`
-pub(crate) async fn fetch_streamer_message(
+pub async fn fetch_streamer_message(
     lake_s3_client: &dyn S3Client,
     s3_bucket_name: &str,
     block_height: types::BlockHeight,

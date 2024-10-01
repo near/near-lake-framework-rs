@@ -2,6 +2,11 @@ pub mod client;
 pub mod fetchers;
 pub mod types;
 
+/// Starts the FastNear provider
+/// Fetches the blocks from the FastNear and sends them to the blocks_sink
+/// The fetching is done in parallel with multiple threads
+/// The number of threads is defined in the FastNearConfig
+/// The fetching starts from the start_block_height and continues until the last block
 #[allow(unused_labels)] // we use loop labels for code-readability
 pub async fn start(
     blocks_sink: tokio::sync::mpsc::Sender<near_indexer_primitives::StreamerMessage>,
