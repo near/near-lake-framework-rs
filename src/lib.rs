@@ -280,9 +280,10 @@ extern crate derive_builder;
 pub use near_indexer_primitives;
 
 pub use aws_credential_types::Credentials;
+pub use providers::fastnear::client as fastnear_client;
 pub use providers::fastnear::types::{FastNearConfig, FastNearConfigBuilder};
+pub use providers::s3::client as s3_client;
 pub use providers::s3::types::{LakeConfig, LakeConfigBuilder};
-
 pub mod providers;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";

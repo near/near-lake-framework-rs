@@ -12,7 +12,7 @@ pub async fn start(
     blocks_sink: tokio::sync::mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: types::FastNearConfig,
 ) -> anyhow::Result<()> {
-    let client = client::FastNearClient::new(&config);
+    let client = config.client();
     let max_num_threads = config.num_threads;
     let next_sink_block =
         std::sync::Arc::new(std::sync::atomic::AtomicU64::new(config.start_block_height));

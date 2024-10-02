@@ -9,9 +9,9 @@ pub struct FastNearClient {
 }
 
 impl FastNearClient {
-    pub fn new(config: &types::FastNearConfig) -> Self {
+    pub fn new(endpoint: String) -> Self {
         Self {
-            endpoint: config.endpoint.clone(),
+            endpoint,
             client: reqwest::Client::new(),
         }
     }
