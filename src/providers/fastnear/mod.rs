@@ -1,3 +1,5 @@
+use crate::FastNearClient;
+
 pub mod client;
 pub mod fetchers;
 pub mod types;
@@ -12,7 +14,7 @@ pub async fn start(
     blocks_sink: tokio::sync::mpsc::Sender<near_indexer_primitives::StreamerMessage>,
     config: types::FastNearConfig,
 ) -> anyhow::Result<()> {
-    let client = config.client();
+    let client = FastNearClient::from_conf(&config);
     let max_num_threads = config.num_threads;
     let next_sink_block =
         std::sync::Arc::new(std::sync::atomic::AtomicU64::new(config.start_block_height));

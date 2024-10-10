@@ -106,14 +106,14 @@ pub(crate) async fn start(
     let lake_s3_client: Box<dyn client::S3Client> = if let Some(s3_client) = config.s3_client {
         s3_client
     } else if let Some(config) = config.s3_config {
-        Box::new(fetchers::LakeS3Client::from_conf(config))
+        Box::new(client::LakeS3Client::from_conf(config))
     } else {
         let aws_config = aws_config::from_env().load().await;
         let s3_config = aws_sdk_s3::config::Builder::from(&aws_config)
             .region(aws_types::region::Region::new(config.s3_region_name))
             .build();
 
-        Box::new(fetchers::LakeS3Client::from_conf(s3_config))
+        Box::new(client::LakeS3Client::from_conf(s3_config))
     };
 
     let mut last_processed_block_hash: Option<near_indexer_primitives::CryptoHash> = None;

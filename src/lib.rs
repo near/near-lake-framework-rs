@@ -280,11 +280,17 @@ extern crate derive_builder;
 pub use near_indexer_primitives;
 
 pub use aws_credential_types::Credentials;
-pub use providers::fastnear::client as fastnear_client;
+
+mod providers;
+
+pub use providers::fastnear;
+pub use providers::s3;
+
+pub use providers::fastnear::client::FastNearClient;
 pub use providers::fastnear::types::{FastNearConfig, FastNearConfigBuilder};
-pub use providers::s3::client as s3_client;
+
+pub use providers::s3::client::LakeS3Client;
 pub use providers::s3::types::{LakeConfig, LakeConfigBuilder};
-pub mod providers;
 
 pub(crate) const LAKE_FRAMEWORK: &str = "near_lake_framework";
 
@@ -317,11 +323,10 @@ pub fn streamer<T: Into<providers::NearLakeFrameworkConfig>>(
     let (sender, receiver) = tokio::sync::mpsc::channel(config.blocks_preload_pool_size());
     match config {
         providers::NearLakeFrameworkConfig::Lake(config) => {
-            (tokio::spawn(providers::s3::start(sender, config)), receiver)
+            (tokio::spawn(s3::start(sender, config)), receiver)
         }
-        providers::NearLakeFrameworkConfig::FastNear(config) => (
-            tokio::spawn(providers::fastnear::start(sender, config)),
-            receiver,
-        ),
+        providers::NearLakeFrameworkConfig::FastNear(config) => {
+            (tokio::spawn(fastnear::start(sender, config)), receiver)
+        }
     }
 }

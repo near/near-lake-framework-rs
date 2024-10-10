@@ -31,12 +31,6 @@ pub struct FastNearConfig {
     pub(crate) blocks_preload_pool_size: usize,
 }
 
-impl FastNearConfig {
-    pub fn client(&self) -> crate::fastnear_client::FastNearClient {
-        crate::fastnear_client::FastNearClient::new(self.endpoint.clone())
-    }
-}
-
 impl FastNearConfigBuilder {
     /// Shortcut to set up [FastNearConfigBuilder] for mainnet
     /// ```

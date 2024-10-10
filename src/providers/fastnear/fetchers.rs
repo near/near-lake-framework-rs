@@ -21,6 +21,21 @@ pub async fn fetch_optimistic_block(
         .expect("Failed to fetch optimistic block")
 }
 
+/// Fetches the optimistic block from the fastenar
+/// This function is used to fetch the optimistic block by height
+/// This function will be using endpoint `/v0/block_opt/:block_height`
+/// This would be waiting some time until the optimistic block is available
+/// Returns `near_indexer_primitives::StreamerMessage` if the block is available
+/// Returns `None` if the block height is skipped
+pub async fn fetch_optimistic_block_by_height(
+    client: &FastNearClient,
+    block_height: types::BlockHeight,
+) -> Option<near_indexer_primitives::StreamerMessage> {
+    client
+        .fetch_until_success(&format!("/v0/block_opt/{}", block_height))
+        .await
+}
+
 /// Fetches the genesis block from the fastenar
 /// Returns `near_indexer_primitives::StreamerMessage`
 pub async fn fetch_first_block(

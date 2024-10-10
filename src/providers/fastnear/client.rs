@@ -4,14 +4,21 @@ use super::types;
 /// It is used to fetch the blocks from the FastNear
 #[derive(Clone, Debug)]
 pub struct FastNearClient {
-    client: reqwest::Client,
     endpoint: String,
+    client: reqwest::Client,
 }
 
 impl FastNearClient {
     pub fn new(endpoint: String) -> Self {
         Self {
             endpoint,
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub fn from_conf(config: &types::FastNearConfig) -> Self {
+        Self {
+            endpoint: config.endpoint.clone(),
             client: reqwest::Client::new(),
         }
     }
