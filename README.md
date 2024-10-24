@@ -153,6 +153,7 @@ The price depends on the number of shards
 FastNear provides a service to access the NEAR Protocol data
 
 - [FastNear](https://fastnear.com/)
+- [Near Data Server](https://github.com/fastnear/neardata-server/)
 
 FastNear provider is a new way to get the data from NEAR Protocol. It is a separate service that provides the data in a more efficient way.
 
