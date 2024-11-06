@@ -148,6 +148,42 @@ $5.7 + $14.1 = $19.8
 
 The price depends on the number of shards
 
+## FastNear provider
+
+FastNear provides a service to access the NEAR Protocol data
+
+- [FastNear](https://fastnear.com/)
+- [Near Data Server](https://github.com/fastnear/neardata-server/)
+
+FastNear provider is a new way to get the data from NEAR Protocol. It is a separate service that provides the data in a more efficient way.
+
+### How to use it:
+
+```rust
+use futures::StreamExt;
+use near_lake_framework::FastNearConfigBuilder;
+
+#[tokio::main]
+async fn main() {
+    
+    let config = FastNearConfigBuilder::default()
+        .testnet()
+        .start_block_height(82422587)
+        .build()
+        .expect("Failed to build LakeConfig");
+   
+    let (_, stream) = near_lake_framework::streamer(config);
+    
+    while let Some(streamer_message) = stream.recv().await {
+       eprintln!("{:#?}", streamer_message);
+    }
+}
+```
+### How to migrate from Lake to FastNear:
+
+- Replace `LakeConfigBuilder` with `FastNearConfigBuilder`
+- Replace `LakeConfig` with `FastNearConfig`
+
 ## Future plans
 
 We use Milestones with clearly defined acceptance criteria:

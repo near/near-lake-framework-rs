@@ -1,4 +1,4 @@
-use crate::s3_client::{GetObjectBytesError, ListCommonPrefixesError, S3Client};
+use super::client::{GetObjectBytesError, ListCommonPrefixesError, S3Client};
 
 /// Type alias represents the block height
 pub type BlockHeight = u64;
