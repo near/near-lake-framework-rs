@@ -8,11 +8,11 @@ categories = ["asynchronous", "api-bindings", "network-programming"]
 keywords = ["near", "near-lake", "near-indexer"]
 authors = ["Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
-rust-version = "1.79.0"
+rust-version = "1.81.0"
 
 # cargo-workspaces
 [workspace.metadata.workspaces]
-version = "0.7.9"
+version = "0.7.10"
 
 [dependencies]
 anyhow = "1.0.79"
@@ -33,10 +33,7 @@ tokio = { version = "1.35.1", features = ["sync", "time", "rt", "macros"] }
 tokio-stream = { version = "0.1.14" }
 tracing = "0.1.40"
 
-# Bug with deserialization of the transactions it should be fixed in the next release  0.27.0
-# near-indexer-primitives = "0.26.0"
-# for now we use the forked version
-near-indexer-primitives = { git = 'https://github.com/kobayurii/nearcore.git', branch = "2.2.1-fork1" }
+near-indexer-primitives = "0.27.0"
 
 [lib]
 doctest = false
