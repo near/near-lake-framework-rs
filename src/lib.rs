@@ -323,7 +323,7 @@ pub fn streamer<T: Into<providers::NearLakeFrameworkConfig>>(
     let (sender, receiver) = tokio::sync::mpsc::channel(config.blocks_preload_pool_size());
     match config {
         providers::NearLakeFrameworkConfig::Lake(config) => {
-            (tokio::spawn(s3::start(sender, config)), receiver)
+            (tokio::spawn(s3::start(sender, *config)), receiver)
         }
         providers::NearLakeFrameworkConfig::FastNear(config) => {
             (tokio::spawn(fastnear::start(sender, config)), receiver)

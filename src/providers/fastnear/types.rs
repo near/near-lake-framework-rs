@@ -11,6 +11,7 @@ pub type BlockHeight = u64;
 ///    let config = FastNearConfigBuilder::default()
 ///        .testnet()
 ///        .start_block_height(82422587)
+///        .authorization_token(Some("your_token_here".to_string()))
 ///        .build()
 ///        .expect("Failed to build FastNearConfig");
 /// # }
@@ -21,6 +22,9 @@ pub struct FastNearConfig {
     /// Fastnear data endpoint
     #[builder(setter(into))]
     pub(crate) endpoint: String,
+    /// Optional authorization token for accessing the FastNear Data
+    #[builder(default)]
+    pub authorization_token: Option<String>,
     /// Defines the block height to start indexing from
     pub(crate) start_block_height: u64,
     /// Number of threads to use for fetching data
@@ -40,6 +44,7 @@ impl FastNearConfigBuilder {
     ///    let config = FastNearConfigBuilder::default()
     ///        .mainnet()
     ///        .start_block_height(65231161)
+    ///        .authorization_token(Some("your_token_here".to_string()))
     ///        .build()
     ///        .expect("Failed to build FastNearConfig");
     /// # }
@@ -57,6 +62,7 @@ impl FastNearConfigBuilder {
     ///    let config = FastNearConfigBuilder::default()
     ///        .testnet()
     ///        .start_block_height(82422587)
+    ///        .authorization_token(Some("your_token_here".to_string()))
     ///        .build()
     ///        .expect("Failed to build FastNearConfig");
     /// # }
@@ -76,6 +82,7 @@ impl FastNearConfigBuilder {
 ///        .mainnet()
 ///        .num_threads(8)
 ///        .start_block_height(82422587)
+///        .authorization_token(Some("your_token_here".to_string()))
 ///        .build()
 ///        .expect("Failed to build FastNearConfig");
 /// # }
@@ -98,6 +105,10 @@ pub enum FastNearError {
     BlockDoesNotExist(String),
     #[error("Request error: {0}")]
     RequestError(reqwest::Error),
+    #[error("Unauthorized request: {0}")]
+    Unauthorized(String),
+    #[error("Forbidden request: {0}")]
+    Forbidden(String),
     #[error("An unknown error occurred: {0}")]
     UnknownError(String),
 }

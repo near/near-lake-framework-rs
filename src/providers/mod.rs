@@ -2,7 +2,7 @@ pub mod fastnear;
 pub mod s3;
 
 pub enum NearLakeFrameworkConfig {
-    Lake(s3::types::LakeConfig),
+    Lake(Box<s3::types::LakeConfig>),
     FastNear(fastnear::types::FastNearConfig),
 }
 
@@ -17,7 +17,7 @@ impl NearLakeFrameworkConfig {
 
 impl From<s3::types::LakeConfig> for NearLakeFrameworkConfig {
     fn from(config: s3::types::LakeConfig) -> Self {
-        NearLakeFrameworkConfig::Lake(config)
+        NearLakeFrameworkConfig::Lake(Box::new(config))
     }
 }
 
