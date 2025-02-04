@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/near/near-lake-framework/compare/v0.7.10...HEAD)
 
+## [0.7.11](https://github.com/near/near-lake-framework/compare/v0.7.10...0.7.11)
+
+* Upgrade `near-indexer-primitives` to `0.28.0` (nearcore-2.4.0)
+* Updated `FastNearClient` to include `authorization_token` in the headers
+
+
 ## [0.7.10](https://github.com/near/near-lake-framework/compare/v0.7.9...0.7.10)
 
 * Upgrade `near-indexer-primitives` to `0.27.0` (nearcore-2.3.0)
