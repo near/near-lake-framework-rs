@@ -156,12 +156,14 @@ pub(crate) async fn fetch_streamer_message(
         )?
     };
 
-    let fetch_shards_futures = (0..block_view.chunks.len() as u64)
-        .collect::<Vec<u64>>()
-        .into_iter()
-        .map(|shard_id| {
-            fetch_shard_or_retry(lake_s3_client, s3_bucket_name, block_height, shard_id)
-        });
+    let fetch_shards_futures = block_view.chunks.iter().map(|chunk| {
+        fetch_shard_or_retry(
+            lake_s3_client,
+            s3_bucket_name,
+            block_height,
+            chunk.shard_id.into(),
+        )
+    });
 
     let shards = futures::future::try_join_all(fetch_shards_futures).await?;
 
