@@ -33,7 +33,7 @@ tokio = { version = "1.35.1", features = ["sync", "time", "rt", "macros"] }
 tokio-stream = { version = "0.1.14" }
 tracing = "0.1.40"
 
-near-indexer-primitives = "0.28.0"
+near-indexer-primitives = "0.29.1"
 
 [lib]
 doctest = false

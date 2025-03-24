@@ -202,15 +202,15 @@ pub async fn fetch_chunk(
 }
 
 /// Fetches the shard from the fastenar by block height and shard id
-/// Returns the result in `near_indexer_primitives::IndexerShard`
+/// Returns the result in `near_indexer_primitives::IndexerChunkView`
 /// If the block does not exist, retries fetching the block
 pub async fn fetch_chunk_or_retry(
     client: &FastNearClient,
     block_height: types::BlockHeight,
     shard_id: u64,
-) -> Result<near_indexer_primitives::IndexerShard, types::FastNearError> {
+) -> Result<near_indexer_primitives::IndexerChunkView, types::FastNearError> {
     client
-        .fetch_until_success::<near_indexer_primitives::IndexerShard>(&format!(
+        .fetch_until_success::<near_indexer_primitives::IndexerChunkView>(&format!(
             "/v0/block/{}/chunk/{}",
             block_height, shard_id
         ))
