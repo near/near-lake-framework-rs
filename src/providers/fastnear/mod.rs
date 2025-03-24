@@ -23,11 +23,13 @@ pub async fn start(
         let start_block_height = next_sink_block.load(std::sync::atomic::Ordering::SeqCst);
         let next_fetch_block =
             std::sync::Arc::new(std::sync::atomic::AtomicU64::new(start_block_height));
-        let last_block_height = fetchers::fetch_last_block(&client)
-            .await
-            .block
-            .header
-            .height;
+        let last_block_height = fetchers::fetch_block_by_finality(
+            &client,
+            near_indexer_primitives::types::Finality::Final,
+        )
+        .await
+        .header
+        .height;
         let is_backfill = last_block_height > start_block_height + max_num_threads;
         let num_threads = if is_backfill { max_num_threads } else { 1 };
         tracing::info!(
