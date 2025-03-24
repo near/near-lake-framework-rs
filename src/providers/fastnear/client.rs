@@ -34,13 +34,13 @@ impl FastNearClient {
     }
 
     /// Fetches the block from the FastNear API
-    /// Returns the result in `Option<near_indexer_primitives::StreamerMessage>`
+    /// Returns the result in `Option<T>`
     /// If the block does not exist, returns `None`
     /// If the request fails, returns an error
-    pub async fn fetch(
-        &self,
-        url_path: &str,
-    ) -> Result<Option<near_indexer_primitives::StreamerMessage>, types::FastNearError> {
+    pub async fn fetch<T>(&self, url_path: &str) -> Result<Option<T>, types::FastNearError>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         let url = format!("{}{}", self.endpoint, url_path);
         let response = self.client.get(&url).send().await?;
         match response.status().as_u16() {
@@ -58,14 +58,14 @@ impl FastNearClient {
 
     /// Fetches the block from the FastNear API until it succeeds
     /// It retries fetching the block until it gets a successful response
-    /// Returns the result in `Option<near_indexer_primitives::StreamerMessage>`
+    /// Returns the result in `Option<T>`
     /// If the block does not exist, returns `None`
-    pub async fn fetch_until_success(
-        &self,
-        url_path: &str,
-    ) -> Option<near_indexer_primitives::StreamerMessage> {
+    pub async fn fetch_until_success<T>(&self, url_path: &str) -> Option<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         loop {
-            match self.fetch(url_path).await {
+            match self.fetch::<T>(url_path).await {
                 Ok(block) => return block,
                 Err(err) => {
                     tracing::warn!(target: crate::LAKE_FRAMEWORK, "Failed to fetch block: {}", err);
