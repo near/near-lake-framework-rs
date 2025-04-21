@@ -58,7 +58,8 @@ pub enum StateChangeCause {
     UpdatedDelayedReceipts,
     ValidatorAccountsUpdate,
     Migration,
-    Resharding,
+    ReshardingV2,
+    BadwidthSchedulerStateUpdate,
 }
 
 impl From<&StateChangeCauseView> for StateChangeCause {
@@ -88,7 +89,10 @@ impl From<&StateChangeCauseView> for StateChangeCause {
             StateChangeCauseView::UpdatedDelayedReceipts => Self::UpdatedDelayedReceipts,
             StateChangeCauseView::ValidatorAccountsUpdate => Self::ValidatorAccountsUpdate,
             StateChangeCauseView::Migration => Self::Migration,
-            StateChangeCauseView::Resharding => Self::Resharding,
+            StateChangeCauseView::ReshardingV2 => Self::ReshardingV2,
+            StateChangeCauseView::BandwidthSchedulerStateUpdate => {
+                Self::BadwidthSchedulerStateUpdate
+            }
         }
     }
 }

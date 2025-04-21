@@ -95,6 +95,34 @@ impl Action {
                             signature: signature.clone(),
                         })
                     }
+                    views::ActionView::DeployGlobalContract { code } => {
+                        Self::DeployGlobalContract(crate::actions::DeployGlobalContract {
+                            metadata: metadata.clone(),
+                            code: code.to_vec(),
+                        })
+                    }
+                    views::ActionView::DeployGlobalContractByAccountId { code } => {
+                        Self::DeployGlobalContractByAccountId(
+                            crate::actions::DeployGlobalContractByAccountId {
+                                metadata: metadata.clone(),
+                                code: code.to_vec(),
+                            },
+                        )
+                    }
+                    views::ActionView::UseGlobalContract { code_hash } => {
+                        Self::UseGlobalContract(crate::actions::UseGlobalContract {
+                            metadata: metadata.clone(),
+                            code_hash: *code_hash,
+                        })
+                    }
+                    views::ActionView::UseGlobalContractByAccountId { account_id } => {
+                        Self::UseGlobalContractByAccountId(
+                            crate::actions::UseGlobalContractByAccountId {
+                                metadata: metadata.clone(),
+                                account_id: account_id.clone(),
+                            },
+                        )
+                    }
                 };
                 result.push(action_kind);
             }
@@ -114,7 +142,7 @@ impl Action {
                 .execution_outcome
                 .outcome
                 .receipt_ids
-                .get(0)
+                .first()
                 .ok_or("Transaction conversion ReceiptId is missing")?,
             predecessor_id: transaction_with_outcome.transaction.signer_id.clone(),
             receiver_id: transaction_with_outcome.transaction.receiver_id.clone(),
@@ -190,6 +218,34 @@ impl Action {
                     delegate_action: DelegateAction::try_from_delegate_action(delegate_action)?,
                     signature: signature.clone(),
                 }),
+                views::ActionView::DeployGlobalContract { code } => {
+                    Self::DeployGlobalContract(crate::actions::DeployGlobalContract {
+                        metadata: metadata.clone(),
+                        code: code.to_vec(),
+                    })
+                }
+                views::ActionView::DeployGlobalContractByAccountId { code } => {
+                    Self::DeployGlobalContractByAccountId(
+                        crate::actions::DeployGlobalContractByAccountId {
+                            metadata: metadata.clone(),
+                            code: code.to_vec(),
+                        },
+                    )
+                }
+                views::ActionView::UseGlobalContract { code_hash } => {
+                    Self::UseGlobalContract(crate::actions::UseGlobalContract {
+                        metadata: metadata.clone(),
+                        code_hash: *code_hash,
+                    })
+                }
+                views::ActionView::UseGlobalContractByAccountId { account_id } => {
+                    Self::UseGlobalContractByAccountId(
+                        crate::actions::UseGlobalContractByAccountId {
+                            metadata: metadata.clone(),
+                            account_id: account_id.clone(),
+                        },
+                    )
+                }
             };
 
             actions.push(action);

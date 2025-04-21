@@ -91,6 +91,10 @@ pub enum Action {
     DeleteKey(DeleteKey),
     DeleteAccount(DeleteAccount),
     Delegate(Delegate),
+    DeployGlobalContract(DeployGlobalContract),
+    DeployGlobalContractByAccountId(DeployGlobalContractByAccountId),
+    UseGlobalContract(UseGlobalContract),
+    UseGlobalContractByAccountId(UseGlobalContractByAccountId),
 }
 
 impl ActionMetaDataExt for Action {
@@ -105,6 +109,10 @@ impl ActionMetaDataExt for Action {
             Self::DeleteKey(action) => action.metadata(),
             Self::DeleteAccount(action) => action.metadata(),
             Self::Delegate(action) => action.metadata(),
+            Self::DeployGlobalContract(action) => action.metadata(),
+            Self::DeployGlobalContractByAccountId(action) => action.metadata(),
+            Self::UseGlobalContract(action) => action.metadata(),
+            Self::UseGlobalContractByAccountId(action) => action.metadata(),
         }
     }
 }
@@ -154,6 +162,10 @@ impl_action_metadata_ext!(AddKey);
 impl_action_metadata_ext!(DeleteKey);
 impl_action_metadata_ext!(DeleteAccount);
 impl_action_metadata_ext!(Delegate);
+impl_action_metadata_ext!(DeployGlobalContract);
+impl_action_metadata_ext!(DeployGlobalContractByAccountId);
+impl_action_metadata_ext!(UseGlobalContract);
+impl_action_metadata_ext!(UseGlobalContractByAccountId);
 
 /// Structure representing the `CreateAccount` action.
 /// This is a special action that is used to create a new account on the blockchain. It doesn't contain any
@@ -317,5 +329,53 @@ impl Delegate {
     /// Returns the signature of the signer on the hash of the `delegate_action`.
     pub fn signature(&self) -> &Signature {
         &self.signature
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DeployGlobalContract {
+    pub(crate) metadata: ActionMetadata,
+    pub(crate) code: Vec<u8>,
+}
+
+impl DeployGlobalContract {
+    pub fn code(&self) -> &[u8] {
+        &self.code
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DeployGlobalContractByAccountId {
+    pub(crate) metadata: ActionMetadata,
+    pub(crate) code: Vec<u8>,
+}
+
+impl DeployGlobalContractByAccountId {
+    pub fn code(&self) -> &[u8] {
+        &self.code
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UseGlobalContract {
+    pub(crate) metadata: ActionMetadata,
+    pub(crate) code_hash: CryptoHash,
+}
+
+impl UseGlobalContract {
+    pub fn code_hash(&self) -> &CryptoHash {
+        &self.code_hash
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UseGlobalContractByAccountId {
+    pub(crate) metadata: ActionMetadata,
+    pub(crate) account_id: AccountId,
+}
+
+impl UseGlobalContractByAccountId {
+    pub fn account_id(&self) -> &AccountId {
+        &self.account_id
     }
 }
