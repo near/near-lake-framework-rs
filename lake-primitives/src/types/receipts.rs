@@ -112,6 +112,8 @@ pub enum ReceiptKind {
     Action,
     /// For the Data Receipt
     Data,
+    /// For the Global Contract Distribution Receipt
+    GlobalContractDistribution,
 }
 
 impl From<&views::ReceiptEnumView> for ReceiptKind {
@@ -119,6 +121,9 @@ impl From<&views::ReceiptEnumView> for ReceiptKind {
         match receipt_enum {
             views::ReceiptEnumView::Action { .. } => Self::Action,
             views::ReceiptEnumView::Data { .. } => Self::Data,
+            views::ReceiptEnumView::GlobalContractDistribution { .. } => {
+                Self::GlobalContractDistribution
+            }
         }
     }
 }
