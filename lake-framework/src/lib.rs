@@ -135,4 +135,39 @@ impl types::Lake {
 
         self.run_with_context(|block, _context| f(block), &context)
     }
+
+    /// Creates `mpsc::channel` and returns the `receiver` to read the stream of `StreamerMessage`
+    ///```no_run
+    ///#[tokio::main]
+    ///# async fn main() -> anyhow::Result<()> {
+    ///    near_lake_framework::LakeBuilder::default()
+    ///        .testnet()
+    ///        .start_block_height(112205773)
+    ///        .build()?
+    ///        .run(handle_block)?;
+    ///    Ok(())
+    ///# }
+    ///
+    /// # async fn handle_block(_block: near_lake_primitives::block::Block) -> anyhow::Result<()> { Ok(()) }
+    ///```
+    pub async fn run_async<Fut, E>(
+        self,
+        f: impl Fn(near_lake_primitives::block::Block) -> Fut,
+    ) -> Result<(), LakeError>
+    where
+        Fut: Future<Output = Result<(), E>>,
+        E: Into<Box<dyn std::error::Error>>,
+    {
+        struct EmptyContext {}
+
+        impl LakeContextExt for EmptyContext {
+            fn execute_before_run(&self, _block: &mut near_lake_primitives::block::Block) {}
+
+            fn execute_after_run(&self) {}
+        }
+
+        let context = EmptyContext {};
+
+        self.run_with_context_async(|block, _context| f(block), &context)
+    }
 }
