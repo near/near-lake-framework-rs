@@ -32,7 +32,7 @@ jobs:
 
   rustfmt:
     name: rustfmt
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -49,7 +49,7 @@ jobs:
 
   rustclippy:
     name: rustclippy
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2

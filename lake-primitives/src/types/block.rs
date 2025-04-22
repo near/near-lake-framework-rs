@@ -182,7 +182,7 @@ impl Block {
     pub fn actions_by_receipt_id<'a>(
         &'a mut self,
         receipt_id: &'a super::ReceiptId,
-    ) -> impl Iterator<Item = &actions::Action> + 'a {
+    ) -> impl Iterator<Item = &'a actions::Action> + 'a {
         self.actions()
             .filter(move |action| &action.receipt_id() == receipt_id)
     }
@@ -203,7 +203,7 @@ impl Block {
     pub fn events_by_contract_id<'a>(
         &'a mut self,
         account_id: &'a crate::near_indexer_primitives::types::AccountId,
-    ) -> impl Iterator<Item = &events::Event> + 'a {
+    ) -> impl Iterator<Item = &'a events::Event> + 'a {
         self.events()
             .filter(move |event| event.is_emitted_by_contract(&account_id.clone()))
     }
