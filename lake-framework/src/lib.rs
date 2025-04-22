@@ -169,5 +169,6 @@ impl types::Lake {
         let context = EmptyContext {};
 
         self.run_with_context_async(|block, _context| f(block), &context)
+            .await
     }
 }
