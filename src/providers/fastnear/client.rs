@@ -41,19 +41,44 @@ impl FastNearClient {
     where
         T: serde::de::DeserializeOwned,
     {
-        let url = format!("{}{}", self.endpoint, url_path);
-        let response = self.client.get(&url).send().await?;
-        match response.status().as_u16() {
-            200 => Ok(response.json().await?),
-            404 => Err(response.json::<types::ErrorResponse>().await?.into()),
-            401 => Err(types::FastNearError::Unauthorized(response.text().await?)),
-            403 => Err(types::FastNearError::Forbidden(response.text().await?)),
-            _ => Err(types::FastNearError::UnknownError(format!(
-                "Unexpected status code: {}, Response: {}",
-                response.status(),
-                response.text().await?
-            ))),
+        // Manually handle redirects to use auth headers
+        let mut url = format!("{}{}", self.endpoint, url_path);
+        for _ in 0..types::MAX_REDIRECTS {
+            let response = self.client.get(&url).send().await?;
+            if response.status().is_redirection() {
+                let location = response
+                    .headers()
+                    .get(reqwest::header::LOCATION)
+                    .ok_or(types::FastNearError::RedirectError(String::from(
+                        "Error to get redirect location.",
+                    )))?
+                    .to_str()
+                    .map_err(|err| types::FastNearError::RedirectError(err.to_string()))?;
+
+                let parsed_current = url::Url::parse(&url)
+                    .map_err(|err| types::FastNearError::RedirectError(err.to_string()))?;
+                // Resolve the location relative to the current URL
+                url = parsed_current
+                    .join(location)
+                    .map_err(|err| types::FastNearError::RedirectError(err.to_string()))?
+                    .to_string();
+                continue;
+            }
+            return match response.status().as_u16() {
+                200 => Ok(response.json().await?),
+                404 => Err(response.json::<types::ErrorResponse>().await?.into()),
+                401 => Err(types::FastNearError::Unauthorized(response.text().await?)),
+                403 => Err(types::FastNearError::Forbidden(response.text().await?)),
+                _ => Err(types::FastNearError::UnknownError(format!(
+                    "Unexpected status code: {}, Response: {}",
+                    response.status(),
+                    response.text().await?
+                ))),
+            };
         }
+        Err(types::FastNearError::RedirectError(String::from(
+            "Max redirects exceeded.",
+        )))
     }
 
     /// Fetches the block from the FastNear API until it succeeds

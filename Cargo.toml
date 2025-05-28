@@ -32,6 +32,7 @@ thiserror = "2.0.11"
 tokio = { version = "1.35.1", features = ["sync", "time", "rt", "macros"] }
 tokio-stream = { version = "0.1.14" }
 tracing = "0.1.40"
+url = "2.5.4"
 
 near-indexer-primitives = "0.30.0-rc.1"
 
