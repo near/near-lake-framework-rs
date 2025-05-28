@@ -1,6 +1,6 @@
+pub const MAX_REDIRECTS: usize = 5;
 /// Type alias represents the block height
 pub type BlockHeight = u64;
-
 /// Configuration struct for Fast NEAR Data Framework
 /// NB! Consider using [`FastNearConfigBuilder`]
 /// Building the `FastNearConfig` example:
@@ -111,6 +111,8 @@ pub enum FastNearError {
     Forbidden(String),
     #[error("An unknown error occurred: {0}")]
     UnknownError(String),
+    #[error("Redirect error: {0}")]
+    RedirectError(String),
 }
 
 impl From<reqwest::Error> for FastNearError {
