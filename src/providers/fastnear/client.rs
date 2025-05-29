@@ -1,5 +1,3 @@
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
-
 use super::types;
 
 /// FastNearClient is a client to interact with the FastNear API
@@ -7,22 +5,25 @@ use super::types;
 #[derive(Clone, Debug)]
 pub struct FastNearClient {
     endpoint: String,
+    authorization_token: Option<String>,
     client: reqwest::Client,
 }
 
 impl FastNearClient {
     pub fn new(endpoint: String, authorization_token: Option<String>) -> Self {
-        let mut headers = HeaderMap::new();
-        if let Some(token) = authorization_token {
-            headers.insert(
-                AUTHORIZATION,
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
-            );
+        let mut headers = reqwest::header::HeaderMap::new();
+        if let Some(token) = &authorization_token {
+            let mut auth_value = reqwest::header::HeaderValue::from_str(&format!("Bearer {token}"))
+                .expect("Invalid authorization token");
+            auth_value.set_sensitive(true);
+            headers.insert(reqwest::header::AUTHORIZATION, auth_value);
         }
 
         Self {
             endpoint,
+            authorization_token,
             client: reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
                 .default_headers(headers)
                 .build()
                 .unwrap(),
@@ -44,7 +45,11 @@ impl FastNearClient {
         // Manually handle redirects to use auth headers
         let mut url = format!("{}{}", self.endpoint, url_path);
         for _ in 0..types::MAX_REDIRECTS {
-            let response = self.client.get(&url).send().await?;
+            let mut request = self.client.get(&url);
+            if let Some(token) = &self.authorization_token {
+                request = request.bearer_auth(token);
+            }
+            let response = request.send().await?;
             if response.status().is_redirection() {
                 let location = response
                     .headers()
