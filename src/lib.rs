@@ -281,7 +281,7 @@ pub use near_indexer_primitives;
 
 pub use aws_credential_types::Credentials;
 
-mod providers;
+pub mod providers;
 
 pub use providers::fastnear;
 pub use providers::s3;
