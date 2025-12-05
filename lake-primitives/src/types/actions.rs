@@ -1,8 +1,11 @@
+use std::collections::BTreeMap;
+
 use near_crypto::{PublicKey, Signature};
 use near_indexer_primitives::{
     types::{AccountId, Balance, Gas},
     views, CryptoHash,
 };
+use near_primitives::views::GlobalContractIdentifierView;
 
 use crate::types::delegate_actions;
 pub use delegate_actions::{
@@ -95,6 +98,7 @@ pub enum Action {
     DeployGlobalContractByAccountId(DeployGlobalContractByAccountId),
     UseGlobalContract(UseGlobalContract),
     UseGlobalContractByAccountId(UseGlobalContractByAccountId),
+    DeterministicStateInit(DeterministicStateInit),
 }
 
 impl ActionMetaDataExt for Action {
@@ -113,6 +117,7 @@ impl ActionMetaDataExt for Action {
             Self::DeployGlobalContractByAccountId(action) => action.metadata(),
             Self::UseGlobalContract(action) => action.metadata(),
             Self::UseGlobalContractByAccountId(action) => action.metadata(),
+            Self::DeterministicStateInit(action) => action.metadata(),
         }
     }
 }
@@ -140,6 +145,9 @@ impl Action {
     impl_as_action_for!(DeleteKey);
     impl_as_action_for!(DeleteAccount);
     impl_as_action_for!(Delegate);
+    impl_as_action_for!(DeployGlobalContract);
+    impl_as_action_for!(UseGlobalContract);
+    impl_as_action_for!(DeterministicStateInit);
 }
 
 // Macro to implement ActionMetaDataExt trait for each Action variant.
@@ -166,6 +174,7 @@ impl_action_metadata_ext!(DeployGlobalContract);
 impl_action_metadata_ext!(DeployGlobalContractByAccountId);
 impl_action_metadata_ext!(UseGlobalContract);
 impl_action_metadata_ext!(UseGlobalContractByAccountId);
+impl_action_metadata_ext!(DeterministicStateInit);
 
 /// Structure representing the `CreateAccount` action.
 /// This is a special action that is used to create a new account on the blockchain. It doesn't contain any
@@ -377,5 +386,27 @@ pub struct UseGlobalContractByAccountId {
 impl UseGlobalContractByAccountId {
     pub fn account_id(&self) -> &AccountId {
         &self.account_id
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DeterministicStateInit {
+    pub(crate) metadata: ActionMetadata,
+    pub(crate) code: GlobalContractIdentifierView,
+    pub(crate) data: BTreeMap<Vec<u8>, Vec<u8>>,
+    pub(crate) deposit: Balance,
+}
+
+impl DeterministicStateInit {
+    pub fn code(&self) -> &GlobalContractIdentifierView {
+        &self.code
+    }
+
+    pub fn data(&self) -> &BTreeMap<Vec<u8>, Vec<u8>> {
+        &self.data
+    }
+
+    pub fn deposit(&self) -> Balance {
+        self.deposit
     }
 }

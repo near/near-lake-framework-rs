@@ -123,6 +123,16 @@ impl Action {
                             },
                         )
                     }
+                    views::ActionView::DeterministicStateInit {
+                        code,
+                        data,
+                        deposit,
+                    } => Self::DeterministicStateInit(crate::actions::DeterministicStateInit {
+                        metadata: metadata.clone(),
+                        code: code.clone(),
+                        data: data.clone(),
+                        deposit: *deposit,
+                    }),
                 };
                 result.push(action_kind);
             }
@@ -246,6 +256,16 @@ impl Action {
                         },
                     )
                 }
+                views::ActionView::DeterministicStateInit {
+                    code,
+                    data,
+                    deposit,
+                } => Self::DeterministicStateInit(crate::actions::DeterministicStateInit {
+                    metadata: metadata.clone(),
+                    code: code.clone(),
+                    data: data.clone(),
+                    deposit: *deposit,
+                }),
             };
 
             actions.push(action);

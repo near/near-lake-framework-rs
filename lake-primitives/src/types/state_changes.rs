@@ -1,4 +1,5 @@
 use near_crypto::PublicKey;
+use near_primitives::{types::Nonce, views::GasKeyView};
 
 use crate::near_indexer_primitives::{
     types::AccountId,
@@ -89,7 +90,6 @@ impl From<&StateChangeCauseView> for StateChangeCause {
             StateChangeCauseView::UpdatedDelayedReceipts => Self::UpdatedDelayedReceipts,
             StateChangeCauseView::ValidatorAccountsUpdate => Self::ValidatorAccountsUpdate,
             StateChangeCauseView::Migration => Self::Migration,
-            StateChangeCauseView::ReshardingV2 => Self::ReshardingV2,
             StateChangeCauseView::BandwidthSchedulerStateUpdate => {
                 Self::BadwidthSchedulerStateUpdate
             }
@@ -112,6 +112,21 @@ pub enum StateChangeValue {
         access_key: AccessKeyView,
     },
     AccessKeyDeletion {
+        account_id: AccountId,
+        public_key: PublicKey,
+    },
+    GasKeyUpdate {
+        account_id: AccountId,
+        public_key: PublicKey,
+        gas_key: GasKeyView,
+    },
+    GasKeyNonceUpdate {
+        account_id: AccountId,
+        public_key: PublicKey,
+        index: u32,
+        nonce: Nonce,
+    },
+    GasKeyDeletion {
         account_id: AccountId,
         public_key: PublicKey,
     },
@@ -140,6 +155,9 @@ impl StateChangeValue {
             Self::AccountDeletion { account_id } => account_id.clone(),
             Self::AccessKeyUpdate { account_id, .. } => account_id.clone(),
             Self::AccessKeyDeletion { account_id, .. } => account_id.clone(),
+            Self::GasKeyUpdate { account_id, .. } => account_id.clone(),
+            Self::GasKeyNonceUpdate { account_id, .. } => account_id.clone(),
+            Self::GasKeyDeletion { account_id, .. } => account_id.clone(),
             Self::DataUpdate { account_id, .. } => account_id.clone(),
             Self::DataDeletion { account_id, .. } => account_id.clone(),
             Self::ContractCodeUpdate { account_id, .. } => account_id.clone(),
@@ -174,6 +192,33 @@ impl From<&StateChangeValueView> for StateChangeValue {
                 account_id,
                 public_key,
             } => Self::AccessKeyDeletion {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+            },
+            StateChangeValueView::GasKeyUpdate {
+                account_id,
+                public_key,
+                gas_key,
+            } => Self::GasKeyUpdate {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+                gas_key: gas_key.clone(),
+            },
+            StateChangeValueView::GasKeyNonceUpdate {
+                account_id,
+                public_key,
+                index,
+                nonce,
+            } => Self::GasKeyNonceUpdate {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+                index: *index,
+                nonce: *nonce,
+            },
+            StateChangeValueView::GasKeyDeletion {
+                account_id,
+                public_key,
+            } => Self::GasKeyDeletion {
                 account_id: account_id.clone(),
                 public_key: public_key.clone(),
             },
